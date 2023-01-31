@@ -1,11 +1,13 @@
 from json import dumps
+from os import _Environ
 
-def check_is_agent(environ, agent_id) -> bool:
-    ...
-    if ...: is_agent = True
-    elif ...: is_agent = False
-
-    return is_agent
+def check_is_agent(environ: _Environt) -> bool:
+    
+    """
+    This function checks the client is a C2-EX-MACHINA agent using User-Agent.
+    """
+    
+    return environ["HTTP_USER_AGENT"].strip().startswith("Agent-C2-EX-MACHINA")
 
 def encode_data(encoding:callable, data:tuple) -> tuple: 
     ...
