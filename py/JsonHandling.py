@@ -1,7 +1,7 @@
 from json import dumps
 from os import _Environ
 
-def check_is_agent(environ: _Environt) -> bool:
+def check_is_agent(environ: _Environ) -> bool:
     
     """
     This function checks the client is a C2-EX-MACHINA agent using User-Agent.
