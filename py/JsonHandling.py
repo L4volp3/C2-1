@@ -7,7 +7,6 @@ def check_is_agent(environ, agent_id) -> bool:
 
     return is_agent
 
-# (environ, user, configuration, agent_id, arguments, inputs, csrf_token=None)
 def encode_data(encoding:callable, data:tuple) -> tuple: 
     ...
     return encoding(data)
