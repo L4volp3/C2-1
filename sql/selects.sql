@@ -36,12 +36,12 @@ SELECT "task", "group", "groupDescription", "description", "data", "start", "use
 FROM "GroupOrders"
 WHERE "group" LIKE '%?%';
 
--- Get Agents by matching Task
+-- Get Agents Orders by matching Task
 SELECT "task", "agent", "description", "data", "start", "user", "ips", "os"
 FROM "AgentOrders"
 WHERE "task" LIKE '%?%';
 
--- Get Groups by matching Task
+-- Get Groups Orders by matching Task
 SELECT "task", "group", "groupDescription", "description", "data", "start", "user"
 FROM "GroupOrders"
 WHERE "task" LIKE '%?%';
@@ -77,6 +77,61 @@ FROM "OrderTemplate"
 INNER JOIN "User" ON "User"."id" = "OrderTemplate"."user"
 WHERE "User"."name" = ?;
 
+-- Get failed tasks
+SELECT
+    "OrderTemplate"."name" AS "name",
+    "OrderTemplate"."description" AS "description",
+    "OrderResult"."exitcode" AS "exitcode",
+    "OrderResult"."data" AS "data",
+    "OrderResult"."error" AS "error"
+FROM "OrderResult"
+INNER JOIN ON "OrderResult"."instance" = "OrderInstance"."id"
+INNER JOIN ON "OrderInstance"."template" = "OrderTemplate"."id"
+INNER JOIN ON "OrderResult"."agent" = "Agent"."id"
+WHERE "OrderResult"."exitcode" != 0
+ORDER BY "OrderResult"."responseDate", "OrderResult"."endDate" DESC;
+
+-- Get failed tasks by user
+SELECT
+    "OrderTemplate"."name" AS "name",
+    "OrderTemplate"."description" AS "description",
+    "OrderResult"."exitcode" AS "exitcode",
+    "OrderResult"."data" AS "data",
+    "OrderResult"."error" AS "error"
+FROM "OrderResult"
+INNER JOIN ON "OrderResult"."instance" = "OrderInstance"."id"
+INNER JOIN ON "OrderInstance"."template" = "OrderTemplate"."id"
+INNER JOIN ON "OrderInstance"."user" = "User"."id"
+INNER JOIN ON "OrderResult"."agent" = "Agent"."id"
+WHERE "OrderResult"."exitcode" != 0 AND "User"."name" = ?
+ORDER BY "OrderResult"."responseDate", "OrderResult"."endDate" DESC;
+
+-- Get failed tasks by agent
+SELECT
+    "OrderTemplate"."name" AS "name",
+    "OrderTemplate"."description" AS "description",
+    "OrderResult"."exitcode" AS "exitcode",
+    "OrderResult"."data" AS "data",
+    "OrderResult"."error" AS "error"
+FROM "OrderResult"
+INNER JOIN ON "OrderResult"."instance" = "OrderInstance"."id"
+INNER JOIN ON "OrderInstance"."template" = "OrderTemplate"."id"
+INNER JOIN ON "OrderResult"."agent" = "Agent"."id"
+WHERE "OrderResult"."exitcode" != 0 AND "Agent"."name" = ?
+ORDER BY "OrderResult"."responseDate", "OrderResult"."endDate" DESC;
+
+-- Get tasks by agent
+SELECT "exitcode", "task", "taskData", "user", "startDate", "endDate"
+FROM "Tasks"
+WHERE "agent" = ?
+ORDER BY "responseDate", "endDate" DESC;
+
+-- Get instances by templates
+SELECT "userExecution", "start", 
+FROM "Orders"
+WHERE "task" = ?
+ORDER BY "start", "creation";
+
 -- List Tasks by matching Group
 SELECT "group", "groupDescription", "task", "taskDescription", "data", "start", "user"
 FROM "GroupTasks";
@@ -85,3 +140,4 @@ FROM "GroupTasks";
 SELECT "group", "groupDescription", "task", "taskDescription", "data", "start", "user"
 FROM "GroupTasks"
 WHERE "group" LIKE '%?%';
+

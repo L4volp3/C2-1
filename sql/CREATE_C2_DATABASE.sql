@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS "OrderTemplate" (
     "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     "type" INTEGER NOT NULL,
     "user" INTEGER NOT NULL,
-    "creationTime" DATE NOT NULL,
+    "creationTime" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "data" VARCHAR(255) NOT NULL,
     "readPermission" INTEGER NOT NULL,
     "executePermission" INTEGER NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS "OrderTemplate" (
 
 CREATE TABLE IF NOT EXISTS "OrderInstance"(
     "id" INTEGER NOT NULL,
-    "startDate" DATE NOT NULL,
+    "startDate" DATETIME NOT NULL,
     "user" INTEGER NOT NULL,
     "orderTargetType" INTEGER NOT NULL DEFAULT 1,  -- if 1 then Agent else Group
     "template" INTEGER NOT NULL,
@@ -44,10 +44,10 @@ CREATE TABLE IF NOT EXISTS "OrderResult"(
     "data" VARCHAR(255) NOT NULL,
     "exitcode" INTEGER NOT NULL,
     "error" VARCHAR(255) NOT NULL,
-    "requestDate" DATE NOT NULL,
-    "responseDate" DATE NOT NULL,
-    "startDate" DATE NOT NULL,
-    "endDate" DATE NOT NULL,
+    "requestDate" DATETIME NOT NULL,
+    "responseDate" DATETIME NOT NULL,
+    "startDate" DATETIME NOT NULL,
+    "endDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "agent" INTEGER NOT NULL,
     "instance" INTEGER NOT NULL,
     FOREIGN KEY ("agent") REFERENCES "Agent" ("id"),
@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS "UnionGroupAgent"(
     "agent" INTEGER NOT NULL,
     "group" INTEGER NOT NULL,
     "user" INTEGER NOT NULL,
+    UNIQUE("agent", "group"),
     FOREIGN KEY ("agent") REFERENCES "Agent" ("id"),
     FOREIGN KEY ("group") REFERENCES "AgentsGroup" ("id"),
     FOREIGN KEY ("user") REFERENCES "User" ("id")
