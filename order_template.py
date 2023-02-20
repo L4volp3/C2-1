@@ -21,7 +21,7 @@
 """
 This module parses arguments and return them as a NamedTuple which is used as an argument in the function insert_order_instance()
 """
-from ... import insert_order_instance
+from ... import insert_order_template
 from argparse import ArgumentParser
 from collections import namedtuple
 from typing import NamedTuple
@@ -31,10 +31,9 @@ from sys import exit
 
 
 # Creates a named tuple with the parsed arguments
-UserTuple = namedtuple(
-    "UserTuple",
+OrderTemplate = namedtuple(
+    "OrderTemplate",
     [
-        "id",
         "type",
         "data",
         "readpermission",
@@ -52,7 +51,6 @@ def parse_args() -> NamedTuple:
     """
     parser = ArgumentParser(description="Argument parser")
     add_argument = parser.add_argument
-    add_argument("--id", type=int, required=True, help="Order Id")
     add_argument(
         "--type",
         choices=["COMMAND", "UPLOAD", "DOWNLOAD"],
@@ -76,18 +74,26 @@ def parse_args() -> NamedTuple:
     )
     add_argument("--name", type=str, required=True, help="Name")
     add_argument("--description", type=str, resuired=True, help="Description")
-    args = parser.parse_args()
 
-    return args
+    return parser.parse_args()
 
 
 def main() -> int:
     """
     This function creates an UserTuple instance an pass it as an argument for the the insert_order_instance() function
     """
-    user_tuple = parse_args()
+    arguments = parse_args()
+    order = OrderTemplate(
+        arguments.type,
+        arguments.data,
+        arguments.readpermission,
+        arguments.executepermission,
+        arguments.after,
+        arguments.name,
+        arguments.description,
+    )
 
-    insert_order_instance(user_tuple)
+    insert_order_template(order)
     return 0
 
 
