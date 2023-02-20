@@ -89,16 +89,10 @@ def user_authentication(ldap_client: ldap, username: str) -> Dict:
             "scripts": user_permissions["scripts"],
         }
     else:
-        user_ip = (
-            environ.get("X_REAL_IP")
-            or environ.get("X_FORWARDED_FOR")
-            or environ.get("X_FORWARDED_HOST")
-            or environ["REMOTE_ADDR"]
-        )
         return {
             "id": "0",
             "name": "Not Authenticated",
-            "ip": user_ip,
+            "ip": environ["REMOTE_IP"],
             "groups": "0",
             "categories": ["*"],
             "scripts": ["*"],
