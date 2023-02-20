@@ -1,6 +1,3 @@
-"""
-Allows the ldap authentication
-"""
 # !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -21,11 +18,15 @@ Allows the ldap authentication
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##################
 
+"""
+This module implements the ldap authentication
+"""
+
 from argparse import ArgumentParser
-from os import environ
-from json import dumps
 from typing import List, Dict
 from sys import stderr, exit
+from os import environ
+from json import dumps
 import ldap
 
 
