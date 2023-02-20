@@ -1,4 +1,7 @@
-#!/usr/bin/env python3
+"""
+Allows the ldap authentication
+"""
+# !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 ###################
@@ -18,16 +21,17 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##################
 
-import ldap
 from argparse import ArgumentParser
 from os import environ
 from json import dumps
-from sys import stderr, exit
 from typing import List, Dict
+from sys import stderr, exit
+import ldap
+
 
 def get_user_groups(ldap_client: ldap, user_attributes: List) -> List:
     """
-    Gets the groups the user is a member of, and theri ids
+    Gets the groups the user is a member of, and their ids
     """
     groups_dns = user_attributes.get("memberOf", [])[0]
     groups_ids = []
@@ -39,9 +43,10 @@ def get_user_groups(ldap_client: ldap, user_attributes: List) -> List:
     return groups_ids
 
 
-def user_authentication(ldap_client: ldap, username:str) -> Dict:
+def user_authentication(ldap_client: ldap, username: str) -> Dict:
     """
-    Recovers the user's id and attributes by specifiying the search base, based on the ldap tree
+    Recovers the user's id and attributes by specifiying the search base,
+    based on the ldap tree
     dc=example,dc=com
       |
       ou=users
@@ -50,22 +55,21 @@ def user_authentication(ldap_client: ldap, username:str) -> Dict:
         |...
     """
     # Specify the search base
-    search_base = (
-        "dc=C2-EX-MACHINA, dc=com, ou=users" 
-    )
+    search_base = "dc=C2-EX-MACHINA, dc=com, ou=users"
     # Specify the filter
     search_filter = f"(uid={username})"
     # Search fo the user
     try:
-        result = ldap_client.search_s(search_base, ldap.SCOPE_SUBTREE, search_filter)
-    except ldap.LDAPError as e:
-        return None, f"LDAP error:{e}"
+        result = ldap_client.search_s(
+            search_base, ldap.SCOPE_SUBTREE, search_filter)
+    except ldap.LDAPError as error:
+        return None, f"LDAP error:{error}"
 
     if result:
         # get the first result (there should only be one)
         _, user_attributes = result[0]
         # get the user ip
-        user_ip = user_attributes.get("ip",[None])[0]
+        user_ip = user_attributes.get("ip", [None])[0]
         # get the user id
         user_id = user_attributes.get("uid", [None])[0]
         groups_id = get_user_groups(ldap_client, user_attributes)
@@ -84,7 +88,7 @@ def user_authentication(ldap_client: ldap, username:str) -> Dict:
             "scripts": user_permissions["scripts"],
         }
     else:
-        ip = (
+        user_ip = (
             environ.get("X_REAL_IP")
             or environ.get("X_FORWARDED_FOR")
             or environ.get("X_FORWARDED_HOST")
@@ -93,15 +97,22 @@ def user_authentication(ldap_client: ldap, username:str) -> Dict:
         return {
             "id": "0",
             "name": "Not Authenticated",
-            "ip": ip,
+            "ip": user_ip,
             "groups": "0",
             "categories": ["*"],
             "scripts": ["*"],
         }
 
 
-def main()-> int:
-    parser = ArgumentParser(description="Authenticates to the C2 ldap server .....")
+def main() -> int:
+    """
+    Takes the username, the password and the api-key as arguments,
+    creates an ldap client instance and binds the ldap client
+    with the username and password,
+    finally, recovers the user's data and dumps it in a json file
+    for WebScripts
+    """
+    parser = ArgumentParser(description="Authenticates to the C2 ldap server")
     parser.add_argument("-u", "--username")
     parser.add_argument("-p", "--password")
     parser.add_argument("-k", "--api-key")
@@ -116,19 +127,20 @@ def main()-> int:
         ldap_server = "ldapC2.com"  # (à définir)
         ldap_client = ldap.initialize(ldap_server)
         ldap_client.protocol_version = ldap.VERSION3
-    except ldap.LDAPException as e:
-        print(f"LDAP error:{e}", file=stderr)
+    except ldap.LDAPException as error:
+        print(f"LDAP error:{error}", file=stderr)
 
     # Binds the LDAP client with the username and password
     try:
         ldap_client.bind(username, password, api_key)
     except ldap.INVALID_CREDENTIALS:
-        print("Invalid credentials or key",file=stderr)
+        print("Invalid credentials or key", file=stderr)
         return 2
 
     result = user_authentication(ldap_client, username)
     print(dumps(result))
     return 0
+
 
 if "__name__" == "__main__":
     exit(main())
