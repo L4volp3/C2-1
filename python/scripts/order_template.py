@@ -59,7 +59,10 @@ def parse_args() -> NamedTuple:
         help="Type of operation",
     )
     add_argument(
-        "--data", type=str, required=True, help="Path to a file or a command to execute"
+        "--data",
+        type=str,
+        required=True,
+        help="Path to a file or a command to execute",
     )
     add_argument(
         "--readpermission",

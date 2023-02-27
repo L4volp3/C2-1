@@ -62,7 +62,8 @@ def user_authentication(ldap_client: ldap, username: str) -> Dict[str, str]:
     # Search fo the user
     try:
         result = ldap_client.search_s(
-            search_base, ldap.SCOPE_SUBTREE, search_filter)
+            search_base, ldap.SCOPE_SUBTREE, search_filter
+        )
     except ldap.LDAPError as error:
         print(f"LDAP error: {error}")
         result = None
