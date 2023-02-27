@@ -44,7 +44,7 @@ def get_user_groups(ldap_client: ldap, user_attributes: List) -> List:
     return groups_ids
 
 
-def user_authentication(ldap_client: ldap, username: str) -> Dict:
+def user_authentication(ldap_client: ldap, username: str) -> Dict[str, str]:
     """
     Recovers the user's id and attributes by specifiying the search base,
     based on the ldap tree
@@ -64,7 +64,8 @@ def user_authentication(ldap_client: ldap, username: str) -> Dict:
         result = ldap_client.search_s(
             search_base, ldap.SCOPE_SUBTREE, search_filter)
     except ldap.LDAPError as error:
-        return None, f"LDAP error:{error}"
+        print(f"LDAP error: {error}")
+        result = None
 
     if result:
         # get the first result (there should only be one)
@@ -88,15 +89,15 @@ def user_authentication(ldap_client: ldap, username: str) -> Dict:
             "categories": user_permissions["categories"],
             "scripts": user_permissions["scripts"],
         }
-    else:
-        return {
-            "id": "0",
-            "name": "Not Authenticated",
-            "ip": environ["REMOTE_IP"],
-            "groups": "0",
-            "categories": ["*"],
-            "scripts": ["*"],
-        }
+
+    return {
+        "id": "0",
+        "name": "Not Authenticated",
+        "ip": environ["REMOTE_IP"],
+        "groups": "0",
+        "categories": ["*"],
+        "scripts": ["*"],
+    }
 
 
 def main() -> int:
@@ -124,6 +125,7 @@ def main() -> int:
         ldap_client.protocol_version = ldap.VERSION3
     except ldap.LDAPException as error:
         print(f"LDAP error:{error}", file=stderr)
+        return 3
 
     # Binds the LDAP client with the username and password
     try:
@@ -132,8 +134,7 @@ def main() -> int:
         print("Invalid credentials or key", file=stderr)
         return 2
 
-    result = user_authentication(ldap_client, username)
-    print(dumps(result))
+    print(dumps(user_authentication(ldap_client, username)))
     return 0
 
 

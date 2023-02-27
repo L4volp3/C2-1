@@ -19,9 +19,10 @@
 ##################
 
 """
-This module parses arguments and return them as a NamedTuple which is used as an argument in the function insert_order_instance()
+This module parses arguments and return them as a NamedTuple which
+is used as an argument in the function insert_order_instance()
 """
-from ... import insert_order_template
+# from ... import insert_order_template
 from argparse import ArgumentParser
 from collections import namedtuple
 from typing import NamedTuple
@@ -80,7 +81,8 @@ def parse_args() -> NamedTuple:
 
 def main() -> int:
     """
-    This function creates an UserTuple instance an pass it as an argument for the the insert_order_instance() function
+    This function creates an UserTuple instance an pass it as
+    an argument for the the insert_order_instance() function
     """
     arguments = parse_args()
     order = OrderTemplate(
