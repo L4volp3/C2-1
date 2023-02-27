@@ -10,6 +10,7 @@ jobs:
   scans:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - name: Setup Python 3.11
         uses: actions/setup-python@v2
         with:
