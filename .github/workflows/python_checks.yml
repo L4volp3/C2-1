@@ -20,8 +20,8 @@ jobs:
           python3.11 -m pip install bandit
       - name: bandit
         run: |
-          find . -name '*.py'
-          ls -la
+          find .. -name '*.py'
+          ls -la ..
           pwd
           python3 -m bandit ./C2/python/*/*.py
       - name: pylint
