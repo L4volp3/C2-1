@@ -1,5 +1,10 @@
+"""
+This WebScripts module is used to send order to C2-EX-MACHINA client/agent.
+"""
+
 from json import dumps
 from os import _Environ
+from typing import Iterable
 from collections.abc import Callable
 from typing import Dict, Union, TypeVar, List, Tuple
 
