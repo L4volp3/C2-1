@@ -22,29 +22,43 @@
 This module implements the ldap authentication
 """
 
+from ldap import (
+    SCOPE_BASE,
+    SCOPE_SUBTREE,
+    LDAPError,
+    LDAPException,
+    initialize,
+    VERSION3,
+    INVALID_CREDENTIALS,
+)
+from ldap.ldapobject import LDAPObject
 from argparse import ArgumentParser
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from sys import stderr, exit
 from os import environ
 from json import dumps
-import ldap
 
 
-def get_user_groups(ldap_client: ldap, user_attributes: List) -> List:
+def get_user_groups(
+    ldap_client: LDAPObject, user_attributes: Dict[str, List[str]]
+) -> List[str]:
     """
     Gets the groups the user is a member of, and their ids
     """
-    groups_dns = user_attributes.get("memberOf", [])[0]
+    groups_dns = user_attributes.get("memberOf", [])
     groups_ids = []
     for group_dn in groups_dns:
-        group_attributes = ldap_client.search_s(group_dn, ldap.SCOPE_BASE)
+        group_attributes = ldap_client.search_s(group_dn, SCOPE_BASE)
+        if not group_attributes:
+            continue
+        _, group_attributes = group_attributes[0]
         group_id = group_attributes.get("cn", [None])[0]
         if group_id:
             groups_ids.append(group_id)
     return groups_ids
 
 
-def user_authentication(ldap_client: ldap, username: str) -> Dict[str, str]:
+def user_authentication(ldap_client: LDAPObject, username: str) -> Dict[str, str]:
     """
     Recovers the user's id and attributes by specifiying the search base,
     based on the ldap tree
@@ -61,10 +75,10 @@ def user_authentication(ldap_client: ldap, username: str) -> Dict[str, str]:
     search_filter = f"(uid={username})"
     # Search fo the user
     try:
-        result = ldap_client.search_s(
-            search_base, ldap.SCOPE_SUBTREE, search_filter
+        result: List[Tuple[str, Dict[str, List[str]]]] = ldap_client.search_s(
+            search_base, SCOPE_SUBTREE, search_filter
         )
-    except ldap.LDAPError as error:
+    except LDAPError as error:
         print(f"LDAP error: {error}")
         result = None
 
@@ -77,18 +91,16 @@ def user_authentication(ldap_client: ldap, username: str) -> Dict[str, str]:
         user_id = user_attributes.get("uid", [None])[0]
         groups_id = get_user_groups(ldap_client, user_attributes)
         # get the user permissions
-        user_permissions = {
-            "categories": user_attributes.get("categories", []),
-            "scripts": user_attributes.get("scripts", []),
-        }
+        categories = user_attributes.get("categories", [])
+        scripts = user_attributes.get("scripts", [])
 
         return {
             "ip": user_ip,
             "id": user_id,
             "name": username,
-            "groups": groups_id,
-            "categories": user_permissions["categories"],
-            "scripts": user_permissions["scripts"],
+            "groups": ",".join(groups_id),
+            "categories": ",".join(categories),
+            "scripts": ",".join(scripts),
         }
 
     return {
@@ -122,16 +134,16 @@ def main() -> int:
     # Creates an LDAP client instance
     try:
         ldap_server = "ldapC2.com"  # (à définir)
-        ldap_client = ldap.initialize(ldap_server)
-        ldap_client.protocol_version = ldap.VERSION3
-    except ldap.LDAPException as error:
+        ldap_client = initialize(ldap_server)
+        ldap_client.protocol_version = VERSION3
+    except LDAPException as error:
         print(f"LDAP error:{error}", file=stderr)
         return 3
 
     # Binds the LDAP client with the username and password
     try:
         ldap_client.bind(username, password, api_key)
-    except ldap.INVALID_CREDENTIALS:
+    except INVALID_CREDENTIALS:
         print("Invalid credentials or key", file=stderr)
         return 2
 
