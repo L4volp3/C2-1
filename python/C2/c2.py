@@ -5,11 +5,12 @@ This WebScripts module is used to send order to C2-EX-MACHINA client/agent.
 from json import dumps
 from os import _Environ
 from collections.abc import Callable
+from collections import namedtuple
 from typing import Dict, Union, TypeVar, List, Tuple, Iterable
 
 Server = TypeVar("Server")
 User = TypeVar("User")
-
+API = namedtuple('API', ['Type','User', 'Description', 'Data', 'Timestamp', 'Id', 'After'])
 
 def check_is_agent(environ: _Environ) -> bool:
     """
@@ -36,6 +37,33 @@ def malware_encode(data: Dict[str, Union[str, Dict[str, str]]]) -> str:
 
     raise NotImplemented
 
+def build_dict(data):
+    """
+    This function is building a dict from data
+    """
+    api = ...
+    api_webscript = { 
+        "NextRequestTime":"YYYY-mm-ddTHH:MM:SS", 
+        "Tasks": [{
+            "Type": api.Type,
+            "User": api.User,
+            "Description": api.Description,
+            "Data": api.Data,
+            "Timestamp": api.Timestamp,
+            "Id": api.Id,
+            "After": api.After,       
+        },{
+            "Type": api.Type,
+            "User": api.User,
+            "Description": api.Description,
+            "Data": api.Data,
+            "Timestamp": api.Timestamp,
+            "Id": api.Id,
+            "After": api.After,
+        }]
+    }
+
+    return api_webscript
 
 def order(
     environ: _Environ,
@@ -50,7 +78,7 @@ def order(
     This function generates and returns response for Agent Order API.
     """
 
-    data = ...
+    data = build_dict()
     is_agent = check_is_agent(environ, agent_id)
     return (
         "200 OK",
