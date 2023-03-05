@@ -4,13 +4,21 @@ This WebScripts module is used to send order to C2-EX-MACHINA client/agent.
 
 from json import dumps
 from os import _Environ
-from collections.abc import Callable
 from collections import namedtuple
+from collections.abc import Callable
 from typing import Dict, Union, TypeVar, List, Tuple, Iterable
 
 Server = TypeVar("Server")
 User = TypeVar("User")
-API = namedtuple('API', ['Type','User', 'Description', 'Data', 'Timestamp', 'Id', 'After'])
+Task = namedtuple('Task', [
+    'type',
+    'user',
+    'description',
+    'data',
+    'timestamp',
+    'id',
+    'after',
+])
 
 def check_is_agent(environ: _Environ) -> bool:
     """
@@ -37,30 +45,28 @@ def malware_encode(data: Dict[str, Union[str, Dict[str, str]]]) -> str:
 
     raise NotImplemented
 
-def build_dict(data):
+def build_dict(agent_id: str) -> Dict[str, Union[str, Dict[str, str]]]:
     """
     This function is building a dict from data
     """
-    api = ...
+    
+    next_request_time = datetime.now() + timedelta(minutes=5)
+    # TODO: configurable time
+    
+    tasks = ...
     api_webscript = { 
-        "NextRequestTime":"YYYY-mm-ddTHH:MM:SS", 
+        "NextRequestTime": next_request_time.strftime(
+            "%Y-%m-%d%H:%M:%S"
+        ),
         "Tasks": [{
-            "Type": api.Type,
-            "User": api.User,
-            "Description": api.Description,
-            "Data": api.Data,
-            "Timestamp": api.Timestamp,
-            "Id": api.Id,
-            "After": api.After,       
-        },{
-            "Type": api.Type,
-            "User": api.User,
-            "Description": api.Description,
-            "Data": api.Data,
-            "Timestamp": api.Timestamp,
-            "Id": api.Id,
-            "After": api.After,
-        }]
+            "Type": api.type,
+            "User": api.user,
+            "Description": api.description,
+            "Data": api.data,
+            "Timestamp": api.timestamp,
+            "Id": api.id,
+            "After": api.after,       
+        } for task in tasks]
     }
 
     return api_webscript
