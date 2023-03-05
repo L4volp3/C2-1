@@ -84,7 +84,7 @@ def order(
     This function generates and returns response for Agent Order API.
     """
 
-    data = build_dict()
+    data = build_dict(agent_id)
     is_agent = check_is_agent(environ, agent_id)
     return (
         "200 OK",
