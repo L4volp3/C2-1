@@ -6,6 +6,7 @@ from json import dumps
 from os import _Environ
 from collections import namedtuple
 from collections.abc import Callable
+from datetime import datetime, timedelta
 from typing import Dict, Union, TypeVar, List, Tuple, Iterable
 
 Server = TypeVar("Server")
@@ -59,13 +60,13 @@ def build_dict(agent_id: str) -> Dict[str, Union[str, Dict[str, str]]]:
             "%Y-%m-%d%H:%M:%S"
         ),
         "Tasks": [{
-            "Type": api.type,
-            "User": api.user,
-            "Description": api.description,
-            "Data": api.data,
-            "Timestamp": api.timestamp,
-            "Id": api.id,
-            "After": api.after,       
+            "Type": task.type,
+            "User": task.user,
+            "Description": task.description,
+            "Data": task.data,
+            "Timestamp": task.timestamp,
+            "Id": task.id,
+            "After": task.after,       
         } for task in tasks]
     }
 
