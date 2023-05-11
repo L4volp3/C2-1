@@ -1,3 +1,19 @@
+--    This file creates the C2 database.
+--    Copyright (C) 2023  Christophe SUBLET (KrysCat-KitKat)
+
+--    This program is free software: you can redistribute it and/or modify
+--    it under the terms of the GNU General Public License as published by
+--    the Free Software Foundation, either version 3 of the License, or
+--    (at your option) any later version.
+
+--    This program is distributed in the hope that it will be useful,
+--    but WITHOUT ANY WARRANTY; without even the implied warranty of
+--    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--    GNU General Public License for more details.
+
+--    You should have received a copy of the GNU General Public License
+--    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 -- Insert User
 INSERT INTO "User" ("name") VALUES (?) ON CONFLICT DO NOTHING;
 
@@ -21,4 +37,53 @@ VALUES (
 );
 
 -- Insert OrderTemplate
-INSERT INTO "OrderTemplate" ("type", "user", "data", "readPermission", "executePermission", )
+INSERT INTO "OrderTemplate" (
+    "type",
+    "user",
+    "data",
+    "readPermission",
+    "executePermission",
+    "after",
+    "name",
+    "description"
+) VALUES (
+    (SELECT "id" FROM "OrderType" WHERE "name" = ?),
+    (SELECT "id" FROM "User" WHERE "name" = ?),
+    ?,
+    ?,
+    ?,
+    (SELECT "id" FROM "OrderTemplate" WHERE "name" = ?),
+    ?,
+    ?,
+);
+
+-- Insert OrderInstance
+INSERT INTO "OrderInstance" (
+    "startDate",
+    "user",
+    "orderTargetType",
+    "template",
+) VALUES (
+    ?,
+    (SELECT "id" FROM "User" WHERE "name" = ?),
+    (SELECT CASE WHEN "Agent" = "Agent" THEN 1 WHEN "Group" = "Group" THEN 0 ELSE RAISE (ABORT, "TargetType must be 1 or 0.") END AS "TargetType"),
+    (SELECT "id" FROM "OrderTemplate" WHERE "name" = ?),
+);
+
+-- Insert OrderToGroup
+INSERT INTO "OrderToGroup" (
+    "group",
+    "instance",
+) VALUES (
+    (SELECT "id" FROM "AgentsGroup" WHERE "name" = ?),
+    (SELECT "id" FROM "OrderInstance" WHERE "name" = ?),
+);
+
+-- Insert OrderToAgent
+INSERT INTO "OrderToAgent" (
+    "agent",
+    "instance",
+) VALUES (
+    (SELECT "id" FROM "Agent" WHERE "name" = ?),
+    (SELECT "id" FROM "OrderInstance" WHERE "name" = ?),
+);
