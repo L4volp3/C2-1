@@ -54,7 +54,7 @@ INSERT INTO "OrderTemplate" (
     ?,
     (SELECT "id" FROM "OrderTemplate" WHERE "name" = ?),
     ?,
-    ?,
+    ?
 );
 
 -- Insert OrderInstance
@@ -62,28 +62,28 @@ INSERT INTO "OrderInstance" (
     "startDate",
     "user",
     "orderTargetType",
-    "template",
+    "template"
 ) VALUES (
     ?,
     (SELECT "id" FROM "User" WHERE "name" = ?),
-    (SELECT CASE WHEN "Agent" = "Agent" THEN 1 WHEN "Group" = "Group" THEN 0 ELSE RAISE (ABORT, "TargetType must be 1 or 0.") END AS "TargetType"),
-    (SELECT "id" FROM "OrderTemplate" WHERE "name" = ?),
+    (SELECT CASE WHEN "Agent" = "Agent" THEN 1 WHEN "Group" = "Group" THEN 0 END AS "TargetType"),
+    (SELECT "id" FROM "OrderTemplate" WHERE "name" = ?)
 );
 
 -- Insert OrderToGroup
 INSERT INTO "OrderToGroup" (
     "group",
-    "instance",
+    "instance"
 ) VALUES (
     (SELECT "id" FROM "AgentsGroup" WHERE "name" = ?),
-    (SELECT "id" FROM "OrderInstance" WHERE "name" = ?),
+    last_insert_rowid()
 );
 
 -- Insert OrderToAgent
 INSERT INTO "OrderToAgent" (
     "agent",
-    "instance",
+    "instance"
 ) VALUES (
     (SELECT "id" FROM "Agent" WHERE "name" = ?),
-    (SELECT "id" FROM "OrderInstance" WHERE "name" = ?),
+    last_insert_rowid()
 );

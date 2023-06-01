@@ -22,16 +22,18 @@ CREATE TABLE IF NOT EXISTS "OrderTemplate" (
     "data" VARCHAR(255) NOT NULL,
     "readPermission" INTEGER NOT NULL,
     "executePermission" INTEGER NOT NULL,
-    "after" INTEGER NOT NULL,
+    "after" INTEGER,
     "name" VARCHAR(100) UNIQUE NOT NULL,
     "description" TEXT NOT NULL,
+    "filename" VARCHAR(255),
+    "timeout" INTEGER,
     FOREIGN KEY ("type") REFERENCES "OrderType" ("id"),
     FOREIGN KEY ("user") REFERENCES "User" ("id"),
     FOREIGN KEY ("after") REFERENCES "OrderTemplate" ("id")
 );
 
 CREATE TABLE IF NOT EXISTS "OrderInstance"(
-    "id" INTEGER NOT NULL,
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     "startDate" DATETIME NOT NULL,
     "user" INTEGER NOT NULL,
     "orderTargetType" INTEGER NOT NULL DEFAULT 1,  -- if 1 then Agent else Group
@@ -122,6 +124,59 @@ INNER JOIN "UnionGroupAgent" ON "UnionGroupAgent"."agent" = "Agent"."id"
 INNER JOIN "AgentsGroup" ON "UnionGroupAgent"."group" = "AgentsGroup"."id"
 INNER JOIN "User" ON "UnionGroupAgent"."user" = "User"."id";
 
+CREATE VIEW IF NOT EXISTS "AgentToOrdersInstances" AS
+SELECT
+    "OrderType"."name" AS "type",
+    "User"."name" AS "user",
+    "OrderTemplate"."name" AS "name",
+    "OrderTemplate"."description" AS "description",
+    "OrderTemplate"."data" AS "data",
+    "OrderTemplate"."filename" AS "filename",
+    "OrderInstance"."startDate" AS "timestamp",
+    "OrderTemplate"."timeout" AS "timeout",
+    "OrderInstance"."id" AS "id",
+    "OrderTemplate"."after" AS "after"
+FROM "Agent"
+INNER JOIN "UnionGroupAgent" ON "Agent"."id" = "UnionGroupAgent"."agent"
+INNER JOIN "AgentsGroup" ON "UnionGroupAgent"."group" = "AgentsGroup"."id"
+INNER JOIN "OrderToGroup" ON "AgentsGroup"."id" = "OrderToGroup"."group"
+INNER JOIN "OrderInstance" ON "OrderToGroup"."instance" = "OrderInstance"."id"
+INNER JOIN "OrderTemplate" ON "OrderInstance"."template" = "OrderTemplate"."id"
+INNER JOIN "OrderType" ON "OrderTemplate"."type" = "OrderType"."id"
+INNER JOIN "OrderResult" ON "OrderInstance"."id" = "OrderResult"."instance"
+INNER JOIN "User" ON "OrderInstance"."id" = "User"."id"
+WHERE "OrderInstance"."orderTargetType" != 1
+AND NOT EXISTS(
+    SELECT "OrderResult"."agent" FROM "OrderResult"
+    INNER JOIN "OrderInstance" ON "OrderInstance"."id" = "OrderResult"."instance"
+    WHERE "OrderResult"."agent" = "Agent"."id"
+    AND "OrderResult"."instance" = "OrderInstance"."id"
+) UNION SELECT
+    "OrderType"."name" AS "type",
+    "User"."name" AS "user",
+    "OrderTemplate"."name" AS "name",
+    "OrderTemplate"."description" AS "description",
+    "OrderTemplate"."data" AS "data",
+    "OrderTemplate"."filename" AS "filename",
+    "OrderInstance"."startDate" AS "timestamp",
+    "OrderTemplate"."timeout" AS "timeout",
+    "OrderInstance"."id" AS "id",
+    "OrderTemplate"."after" AS "after"
+FROM "Agent"
+INNER JOIN "OrderToAgent" ON "Agent"."id" = "OrderToAgent"."agent"
+INNER JOIN "OrderInstance" ON "OrderToAgent"."instance" = "OrderInstance"."id"
+INNER JOIN "OrderTemplate" ON "OrderInstance"."template" = "OrderTemplate"."id"
+INNER JOIN "OrderType" ON "OrderTemplate"."type" = "OrderType"."id"
+INNER JOIN "OrderResult" ON "OrderInstance"."id" = "OrderResult"."instance"
+INNER JOIN "User" ON "OrderInstance"."id" = "User"."id"
+WHERE "OrderInstance"."orderTargetType" == 1
+AND NOT EXISTS(
+    SELECT "OrderResult"."agent" FROM "OrderResult"
+    INNER JOIN "OrderInstance" ON "OrderInstance"."id" = "OrderResult"."instance"
+    WHERE "OrderResult"."agent" = "Agent"."id"
+    AND "OrderResult"."instance" = "OrderInstance"."id"
+);
+
 CREATE VIEW IF NOT EXISTS "Orders" AS
 SELECT
     "OrderTemplate"."name" AS "task",
@@ -206,10 +261,9 @@ INNER JOIN "User" ON "OrderInstance"."user" = "User"."id"
 INNER JOIN "OrderTemplate" ON "OrderInstance"."template" = "OrderTemplate"."id";
 
 INSERT INTO "OS" ("name") VALUES ("Windows"), ("Linux"), ("Darwin");
-INSERT INTO "AgentsGroup" ("name", "description") VALUES ("Windows", "All Windows Agents"), ("Linux", "All Linux Agents"), ("Darwin", "All Darwin Agents");
+INSERT INTO "AgentsGroup" ("name", "description") VALUES ("Windows", "All Windows Agents"), ("Linux", "All Linux Agents"), ("Darwin", "All Darwin (Mac) Agents");
 INSERT INTO "OrderType" ("name") VALUES ("COMMAND"), ("UPLOAD"), ("DOWNLOAD");
 
 SELECT * FROM OS;
 SELECT * FROM AgentsGroup;
 SELECT * FROM OrderType;
-
