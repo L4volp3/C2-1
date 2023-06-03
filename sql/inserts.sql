@@ -15,7 +15,7 @@
 --    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 -- Insert User
-INSERT INTO "User" ("name") VALUES (?) ON CONFLICT DO NOTHING;
+INSERT INTO "User" ("name", "user") VALUES (?, ?) ON CONFLICT DO NOTHING;
 
 -- Insert OS
 INSERT INTO "OS" ("name") VALUES (?) ON CONFLICT DO NOTHING;

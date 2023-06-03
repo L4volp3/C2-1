@@ -1,5 +1,5 @@
-INSERT INTO "User" ("name") VALUES ("UserTest1") ON CONFLICT DO NOTHING;
-INSERT INTO "User" ("name") VALUES ("UserTest2") ON CONFLICT DO NOTHING;
+INSERT INTO "User" ("name", "user") VALUES ("UserTest1", 0) ON CONFLICT DO NOTHING;
+INSERT INTO "User" ("name", "user") VALUES ("UserTest2", 0) ON CONFLICT DO NOTHING;
 
 INSERT INTO "Agent" ("name", "key", "ips", "os")
 VALUES ("TestAgent1", "TestKey1", "127.0.0.1", (SELECT "id" FROM "OS" WHERE "name" = "Windows"))

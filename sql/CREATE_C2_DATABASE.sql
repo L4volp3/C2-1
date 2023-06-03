@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS "OrderTemplate" (
 CREATE TABLE IF NOT EXISTS "OrderInstance"(
     "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     "startDate" DATETIME NOT NULL,
+    "creationDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "user" INTEGER NOT NULL,
     "orderTargetType" INTEGER NOT NULL DEFAULT 1,  -- if 1 then Agent else Group
     "template" INTEGER NOT NULL,
@@ -62,6 +63,7 @@ CREATE TABLE IF NOT EXISTS "Agent"(
     "os" INTEGER NOT NULL,
     "key" CHAR(255) UNIQUE NOT NULL,
     "ips" CHAR(100) NOT NULL,
+    "creationDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY ("os") REFERENCES "OS" ("id")
 );
 
@@ -69,6 +71,7 @@ CREATE TABLE IF NOT EXISTS "UnionGroupAgent"(
     "agent" INTEGER NOT NULL,
     "group" INTEGER NOT NULL,
     "user" INTEGER NOT NULL,
+    "creationDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE("agent", "group"),
     FOREIGN KEY ("agent") REFERENCES "Agent" ("id"),
     FOREIGN KEY ("group") REFERENCES "AgentsGroup" ("id"),
@@ -83,7 +86,10 @@ CREATE TABLE IF NOT EXISTS "AgentsGroup"(
 
 CREATE TABLE IF NOT EXISTS "User"(
     "id" INTEGER PRIMARY KEY NOT NULL,
-    "name" VARCHAR(255) UNIQUE NOT NULL
+    "name" VARCHAR(255) UNIQUE NOT NULL,
+    "user" INTEGER NOT NULL,
+    "creationDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY ("user") REFERENCES "User" ("id")
 );
 
 CREATE TABLE IF NOT EXISTS "OrderType"(
@@ -149,7 +155,6 @@ CROSS JOIN "User" ON "OrderInstance"."user" = "User"."id"
 WHERE "OrderInstance"."orderTargetType" != 1
 AND NOT EXISTS(
     SELECT "OrderResult"."agent" FROM "OrderResult"
-    INNER JOIN "OrderInstance" ON "OrderInstance"."id" = "OrderResult"."instance"
     WHERE "OrderResult"."agent" = "Agent"."id"
     AND "OrderResult"."instance" = "OrderInstance"."id"
 ) UNION SELECT
@@ -174,7 +179,6 @@ CROSS JOIN "User" ON "OrderInstance"."user" = "User"."id"
 WHERE "OrderInstance"."orderTargetType" == 1
 AND NOT EXISTS(
     SELECT "OrderResult"."agent" FROM "OrderResult"
-    INNER JOIN "OrderInstance" ON "OrderInstance"."id" = "OrderResult"."instance"
     WHERE "OrderResult"."agent" = "Agent"."id"
     AND "OrderResult"."instance" = "OrderInstance"."id"
 );
