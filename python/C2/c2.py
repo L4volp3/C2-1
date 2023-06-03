@@ -34,7 +34,7 @@ This tool is a secure C2 working in WebScripts environment
 for SOC and Blue Team automations
 """
 license = "GPL-3.0 License"
-__url__ = "https://github.com/C2-EX-MACHINA/Agent/"
+__url__ = "https://github.com/C2-EX-MACHINA/C2/"
 
 copyright = """
 WebScripts  Copyright (C) 2023  C2-EX-MACHINA
