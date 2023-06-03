@@ -87,3 +87,18 @@ INSERT INTO "OrderToAgent" (
     (SELECT "id" FROM "Agent" WHERE "name" = ?),
     last_insert_rowid()
 );
+
+-- Insert OrderResult
+INSERT INTO "OrderResult" (
+    "data",
+    "error",
+    "exitcode",
+    "requestDate",
+    "responseDate",
+    "startDate",
+    "endDate",
+    "agent",
+    "instance"
+) VALUES (
+    ?, ?, ?, ?, ?, ?, ?, ?, ?
+);

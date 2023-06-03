@@ -135,15 +135,17 @@ SELECT
     "OrderInstance"."startDate" AS "timestamp",
     "OrderTemplate"."timeout" AS "timeout",
     "OrderInstance"."id" AS "id",
-    "OrderTemplate"."after" AS "after"
+    "OrderTemplate"."after" AS "after",
+    "AgentsGroup"."name" AS "source",
+    "Agent"."name" AS "agent"
 FROM "OrderInstance" 
-INNER JOIN "OrderToGroup" ON "OrderToGroup"."instance" = "OrderInstance"."id"
-INNER JOIN "AgentsGroup" ON "AgentsGroup"."id" = "OrderToGroup"."group"
-INNER JOIN "UnionGroupAgent" ON "UnionGroupAgent"."group" = "AgentsGroup"."id"
-INNER JOIN "Agent" ON "Agent"."id" = "UnionGroupAgent"."agent"
-INNER JOIN "OrderTemplate" ON "OrderInstance"."template" = "OrderTemplate"."id"
-INNER JOIN "OrderType" ON "OrderTemplate"."type" = "OrderType"."id"
-INNER JOIN "User" ON "OrderInstance"."user" = "User"."id"
+CROSS JOIN "OrderToGroup" ON "OrderToGroup"."instance" = "OrderInstance"."id"
+CROSS JOIN "AgentsGroup" ON "AgentsGroup"."id" = "OrderToGroup"."group"
+CROSS JOIN "UnionGroupAgent" ON "UnionGroupAgent"."group" = "AgentsGroup"."id"
+CROSS JOIN "Agent" ON "Agent"."id" = "UnionGroupAgent"."agent"
+CROSS JOIN "OrderTemplate" ON "OrderInstance"."template" = "OrderTemplate"."id"
+CROSS JOIN "OrderType" ON "OrderTemplate"."type" = "OrderType"."id"
+CROSS JOIN "User" ON "OrderInstance"."user" = "User"."id"
 WHERE "OrderInstance"."orderTargetType" != 1
 AND NOT EXISTS(
     SELECT "OrderResult"."agent" FROM "OrderResult"
@@ -160,13 +162,15 @@ AND NOT EXISTS(
     "OrderInstance"."startDate" AS "timestamp",
     "OrderTemplate"."timeout" AS "timeout",
     "OrderInstance"."id" AS "id",
-    "OrderTemplate"."after" AS "after"
+    "OrderTemplate"."after" AS "after",
+    "Agent"."name" AS "source",
+    "Agent"."name" AS "agent"
 FROM "Agent"
-INNER JOIN "OrderToAgent" ON "Agent"."id" = "OrderToAgent"."agent"
-INNER JOIN "OrderInstance" ON "OrderToAgent"."instance" = "OrderInstance"."id"
-INNER JOIN "OrderTemplate" ON "OrderInstance"."template" = "OrderTemplate"."id"
-INNER JOIN "OrderType" ON "OrderTemplate"."type" = "OrderType"."id"
-INNER JOIN "User" ON "OrderInstance"."user" = "User"."id"
+CROSS JOIN "OrderToAgent" ON "Agent"."id" = "OrderToAgent"."agent"
+CROSS JOIN "OrderInstance" ON "OrderToAgent"."instance" = "OrderInstance"."id"
+CROSS JOIN "OrderTemplate" ON "OrderInstance"."template" = "OrderTemplate"."id"
+CROSS JOIN "OrderType" ON "OrderTemplate"."type" = "OrderType"."id"
+CROSS JOIN "User" ON "OrderInstance"."user" = "User"."id"
 WHERE "OrderInstance"."orderTargetType" == 1
 AND NOT EXISTS(
     SELECT "OrderResult"."agent" FROM "OrderResult"
