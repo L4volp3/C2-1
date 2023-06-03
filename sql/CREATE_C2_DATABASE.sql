@@ -19,13 +19,13 @@ CREATE TABLE IF NOT EXISTS "OrderTemplate" (
     "type" INTEGER NOT NULL,
     "user" INTEGER NOT NULL,
     "creationTime" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "data" VARCHAR(255) NOT NULL,
+    "data" VARCHAR(256) NOT NULL,
     "readPermission" INTEGER NOT NULL,
     "executePermission" INTEGER NOT NULL,
     "after" INTEGER,
     "name" VARCHAR(100) UNIQUE NOT NULL,
     "description" TEXT NOT NULL,
-    "filename" VARCHAR(255),
+    "filename" VARCHAR(256),
     "timeout" INTEGER,
     FOREIGN KEY ("type") REFERENCES "OrderType" ("id"),
     FOREIGN KEY ("user") REFERENCES "User" ("id"),
@@ -44,9 +44,9 @@ CREATE TABLE IF NOT EXISTS "OrderInstance"(
 );
 
 CREATE TABLE IF NOT EXISTS "OrderResult"(
-    "data" VARCHAR(255) NOT NULL,
+    "data" VARCHAR(256) NOT NULL,
     "exitcode" INTEGER NOT NULL,
-    "error" VARCHAR(255) NOT NULL,
+    "error" VARCHAR(256) NOT NULL,
     "requestDate" DATETIME NOT NULL,
     "responseDate" DATETIME NOT NULL,
     "startDate" DATETIME NOT NULL,
@@ -59,9 +59,9 @@ CREATE TABLE IF NOT EXISTS "OrderResult"(
 
 CREATE TABLE IF NOT EXISTS "Agent"(
     "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    "name" CHAR(255) UNIQUE NOT NULL,
+    "name" CHAR(256) UNIQUE NOT NULL,
     "os" INTEGER NOT NULL,
-    "key" CHAR(255) UNIQUE NOT NULL,
+    "key" CHAR(256) UNIQUE NOT NULL,
     "ips" CHAR(100) NOT NULL,
     "creationDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY ("os") REFERENCES "OS" ("id")
@@ -80,13 +80,13 @@ CREATE TABLE IF NOT EXISTS "UnionGroupAgent"(
 
 CREATE TABLE IF NOT EXISTS "AgentsGroup"(
     "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    "name" CHAR(255) UNIQUE NOT NULL,
+    "name" CHAR(256) UNIQUE NOT NULL,
     "description" TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "User"(
     "id" INTEGER PRIMARY KEY NOT NULL,
-    "name" VARCHAR(255) UNIQUE NOT NULL,
+    "name" VARCHAR(256) UNIQUE NOT NULL,
     "user" INTEGER NOT NULL,
     "creationDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY ("user") REFERENCES "User" ("id")
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS "User"(
 
 CREATE TABLE IF NOT EXISTS "OrderType"(
     "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    "name" CHAR(255) UNIQUE NOT NULL
+    "name" CHAR(256) UNIQUE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "OrderToGroup"(

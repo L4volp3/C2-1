@@ -157,3 +157,11 @@ SELECT "group", "groupDescription", "task", "taskDescription", "data", "start", 
 FROM "GroupTasks"
 WHERE "group" LIKE '%?%';
 
+-- Get all agent and tasks not executed
+SELECT * FROM InstancesToAgents;
+
+-- Get all tasks not executed for an agent
+SELECT * FROM InstancesToAgents WHERE "agent" = ?;
+
+-- Check hostname and key agent
+SELECT "id" FROM "Agent" WHERE "name" = ? AND "key" = ?;
