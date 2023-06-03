@@ -74,7 +74,7 @@ INSERT INTO "OrderInstance" (
 ) VALUES (
     "2023-05-12 02:45:14",
     (SELECT "id" FROM "User" WHERE "name" = "UserTest1"),
-    (SELECT CASE WHEN "Agent" = "Agent" THEN 1 ELSE 0 END AS "TargetType"),
+    (SELECT CASE WHEN "Agent" = "Group" THEN 1 ELSE 0 END AS "TargetType"),
     (SELECT "id" FROM "OrderTemplate" WHERE "name" = "TestCommand1")
 );
 
@@ -94,7 +94,7 @@ INSERT INTO "OrderInstance" (
 ) VALUES (
     "2016-06-22 18:12:25",
     (SELECT "id" FROM "User" WHERE "name" = "UserTest2"),
-    (SELECT CASE WHEN "Agent" = "Agent" THEN 1 ELSE 0 END AS "TargetType"),
+    (SELECT CASE WHEN "Agent" = "Group" THEN 1 ELSE 0 END AS "TargetType"),
     (SELECT "id" FROM "OrderTemplate" WHERE "name" = "TestCommand2")
 );
 
@@ -113,6 +113,26 @@ INSERT INTO "OrderInstance" (
     "template"
 ) VALUES (
     "2023-05-12 02:45:14",
+    (SELECT "id" FROM "User" WHERE "name" = "UserTest1"),
+    (SELECT CASE WHEN "Agent" = "Agent" THEN 1 ELSE 0 END AS "TargetType"),
+    (SELECT "id" FROM "OrderTemplate" WHERE "name" = "TestCommand1")
+);
+
+INSERT INTO "OrderToAgent" (
+    "agent",
+    "instance"
+) VALUES (
+    (SELECT "id" FROM "Agent" WHERE "name" = "TestAgent1"),
+    last_insert_rowid()
+);
+
+INSERT INTO "OrderInstance" (
+    "startDate",
+    "user",
+    "orderTargetType",
+    "template"
+) VALUES (
+    "2022-10-26 05:48:36",
     (SELECT "id" FROM "User" WHERE "name" = "UserTest1"),
     (SELECT CASE WHEN "Agent" = "Agent" THEN 1 ELSE 0 END AS "TargetType"),
     (SELECT "id" FROM "OrderTemplate" WHERE "name" = "TestCommand1")

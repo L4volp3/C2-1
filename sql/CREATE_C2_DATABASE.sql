@@ -124,7 +124,7 @@ INNER JOIN "UnionGroupAgent" ON "UnionGroupAgent"."agent" = "Agent"."id"
 INNER JOIN "AgentsGroup" ON "UnionGroupAgent"."group" = "AgentsGroup"."id"
 INNER JOIN "User" ON "UnionGroupAgent"."user" = "User"."id";
 
-CREATE VIEW IF NOT EXISTS "AgentToOrdersInstances" AS
+CREATE VIEW IF NOT EXISTS "InstancesToAgents" AS
 SELECT
     "OrderType"."name" AS "type",
     "User"."name" AS "user",
@@ -136,15 +136,14 @@ SELECT
     "OrderTemplate"."timeout" AS "timeout",
     "OrderInstance"."id" AS "id",
     "OrderTemplate"."after" AS "after"
-FROM "Agent"
-INNER JOIN "UnionGroupAgent" ON "Agent"."id" = "UnionGroupAgent"."agent"
-INNER JOIN "AgentsGroup" ON "UnionGroupAgent"."group" = "AgentsGroup"."id"
-INNER JOIN "OrderToGroup" ON "AgentsGroup"."id" = "OrderToGroup"."group"
-INNER JOIN "OrderInstance" ON "OrderToGroup"."instance" = "OrderInstance"."id"
+FROM "OrderInstance" 
+INNER JOIN "OrderToGroup" ON "OrderToGroup"."instance" = "OrderInstance"."id"
+INNER JOIN "AgentsGroup" ON "AgentsGroup"."id" = "OrderToGroup"."group"
+INNER JOIN "UnionGroupAgent" ON "UnionGroupAgent"."group" = "AgentsGroup"."id"
+INNER JOIN "Agent" ON "Agent"."id" = "UnionGroupAgent"."agent"
 INNER JOIN "OrderTemplate" ON "OrderInstance"."template" = "OrderTemplate"."id"
 INNER JOIN "OrderType" ON "OrderTemplate"."type" = "OrderType"."id"
-INNER JOIN "OrderResult" ON "OrderInstance"."id" = "OrderResult"."instance"
-INNER JOIN "User" ON "OrderInstance"."id" = "User"."id"
+INNER JOIN "User" ON "OrderInstance"."user" = "User"."id"
 WHERE "OrderInstance"."orderTargetType" != 1
 AND NOT EXISTS(
     SELECT "OrderResult"."agent" FROM "OrderResult"
@@ -167,8 +166,7 @@ INNER JOIN "OrderToAgent" ON "Agent"."id" = "OrderToAgent"."agent"
 INNER JOIN "OrderInstance" ON "OrderToAgent"."instance" = "OrderInstance"."id"
 INNER JOIN "OrderTemplate" ON "OrderInstance"."template" = "OrderTemplate"."id"
 INNER JOIN "OrderType" ON "OrderTemplate"."type" = "OrderType"."id"
-INNER JOIN "OrderResult" ON "OrderInstance"."id" = "OrderResult"."instance"
-INNER JOIN "User" ON "OrderInstance"."id" = "User"."id"
+INNER JOIN "User" ON "OrderInstance"."user" = "User"."id"
 WHERE "OrderInstance"."orderTargetType" == 1
 AND NOT EXISTS(
     SELECT "OrderResult"."agent" FROM "OrderResult"
