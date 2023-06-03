@@ -37,7 +37,7 @@ license = "GPL-3.0 License"
 __url__ = "https://github.com/C2-EX-MACHINA/C2/"
 
 copyright = """
-WebScripts  Copyright (C) 2023  C2-EX-MACHINA
+C2  Copyright (C) 2023  C2-EX-MACHINA
 This program comes with ABSOLUTELY NO WARRANTY.
 This is free software, and you are welcome to redistribute it
 under certain conditions.
