@@ -268,7 +268,7 @@ INNER JOIN "OrderTemplate" ON "OrderInstance"."template" = "OrderTemplate"."id";
 
 INSERT INTO "OS" ("name") VALUES ("Windows"), ("Linux"), ("Darwin");
 INSERT INTO "AgentsGroup" ("name", "description") VALUES ("Windows", "All Windows Agents"), ("Linux", "All Linux Agents"), ("Darwin", "All Darwin (Mac) Agents");
-INSERT INTO "OrderType" ("name") VALUES ("COMMAND"), ("UPLOAD"), ("DOWNLOAD");
+INSERT INTO "OrderType" ("name") VALUES ("COMMAND"), ("UPLOAD"), ("DOWNLOAD"), ("MEMORYSCRIPT"), ("TEMPSCRIPT");
 
 SELECT * FROM OS;
 SELECT * FROM AgentsGroup;

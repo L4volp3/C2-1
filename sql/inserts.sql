@@ -58,6 +58,7 @@ INSERT INTO "OrderTemplate" (
 );
 
 -- Insert OrderInstance
+-- TODO: Insert check for account permission
 INSERT INTO "OrderInstance" (
     "startDate",
     "user",
@@ -67,7 +68,7 @@ INSERT INTO "OrderInstance" (
     ?,
     (SELECT "id" FROM "User" WHERE "name" = ?),
     (SELECT CASE WHEN "Agent" = "Agent" THEN 1 WHEN "Group" = "Group" THEN 0 END AS "TargetType"),
-    (SELECT "id" FROM "OrderTemplate" WHERE "name" = ?)
+    (SELECT "id" FROM "OrderTemplate" WHERE "name" = ? AND "executePermission" <= ?)
 );
 
 -- Insert OrderToGroup

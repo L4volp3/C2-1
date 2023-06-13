@@ -1,8 +1,8 @@
-# !/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 ###################
-#    Copyright (C) 2023  Black-pearl2498
+#    Copyright (C) 2023  C2-EX-MACHINA
 
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -19,88 +19,122 @@
 ##################
 
 """
-This module parses arguments and return them as a NamedTuple which
-is used as an argument in the function insert_order_instance()
+This script stores a new OrderTemplate in C2-EX-MACHINA database.
 """
-# from ... import insert_order_template
-from argparse import ArgumentParser
+
+from argparse import ArgumentParser, Namespace
 from collections import namedtuple
-from typing import NamedTuple
+from os.path import join
 from json import loads
 from os import environ
 from sys import exit
 
-
-# Creates a named tuple with the parsed arguments
 OrderTemplate = namedtuple(
     "OrderTemplate",
     [
         "type",
+        "user",
         "data",
         "readpermission",
         "executepermission",
         "after",
         "name",
         "description",
+        "filename",
+        "timeout",
     ],
 )
 
+def insert_order_template(order_template: OrderTemplate) -> None:
+    """
+    This function inserts an OrderTemplate into the database.
+    """
 
-def parse_args() -> NamedTuple:
+    connection = connect(join(environ["WEBSCRIPTS_DATA_PATH"], "c2_ex_machina.db"))
+    cursor = connection.cursor()
+    cursor.execute('INSERT INTO "OrderTemplate" ("type","user","data","readPermission","executePermission","after","name","description","filename","timeout") VALUES ((SELECT "id" FROM "OrderType" WHERE "name" = ?),(SELECT "id" FROM "User" WHERE "name" = ?),?,?,(SELECT "id" FROM "OrderTemplate" WHERE "name" = ?),?,?,?,?);', *order_template)
+    cursor.close()
+    connection.close()
+
+
+def parse_args() -> Namespace:
     """
     This function parses the variables passed as arguments
     """
-    parser = ArgumentParser(description="Argument parser")
+
+    connection = connect(join(environ["WEBSCRIPTS_DATA_PATH"], "c2_ex_machina.db"))
+    cursor = connection.cursor()
+    cursor.execute('SELECT name FROM OrderType;')
+    order_types = {x[0] for x in cursor.fetchall()}
+    cursor.close()
+    connection.close()
+
+    max_privilege_level = max(loads(environ["USER"])["groups"])
+
+    parser = ArgumentParser(
+        description=(
+            "This script stores a new OrderTemplate in C2-EX-MACHINA database."
+        )
+    )
     add_argument = parser.add_argument
     add_argument(
         "--type",
-        choices=["COMMAND", "UPLOAD", "DOWNLOAD"],
         required=True,
-        help="Type of operation",
+        choices=order_types,
+        help="Operation type name (like: 'COMMAND', 'DOWNLOAD', 'UPLOAD', ...)",
     )
     add_argument(
         "--data",
         type=str,
         required=True,
-        help="Path to a file or a command to execute",
+        help=(
+            "Code for scripts and COMMAND or filename"
+            " for UPLOAD and DOWNLOAD type"
+        ),
     )
     add_argument(
-        "--readpermission",
-        default=max(loads(environ["USER"])["groups"]),
+        "--read-permission",
+        default=max_privilege_level,
         type=int,
-        help="Read permission",
+        help="Minimum privilege level (group level) to read task output.",
     )
-    add_argument("--executepremission", type=int, help="Execute permission")
+    add_argument("--execute-premission", default=max_privilege_level, type=int, help=help="Minimum privilege level (group level) to start task execution.",)
     add_argument(
         "--after",
         type=str,
+        default=None,
         help="Order Id or null, to execute this order after any precedent order",
     )
-    add_argument("--name", type=str, required=True, help="Name")
-    add_argument("--description", type=str, resuired=True, help="Description")
+    add_argument("--name", type=str, required=True, help="The new order template name.")
+    add_argument("--description", type=str, required=True, help="The new order template description.")
+    add_argument("--filename", type=str, help="Filename for UPLOAD file destination path.")
+    add_argument("--timeout", type=int, help="Timeout to stop the task if is blocked.")
 
     return parser.parse_args()
 
 
 def main() -> int:
     """
-    This function creates an UserTuple instance an pass it as
-    an argument for the the insert_order_instance() function
+    This is the main function to starts the script from the command line.
     """
+
     arguments = parse_args()
     order = OrderTemplate(
         arguments.type,
+        loads(environ["USER"])["name"],
         arguments.data,
         arguments.readpermission,
         arguments.executepermission,
         arguments.after,
         arguments.name,
         arguments.description,
+        arguments.filename,
+        arguments.timeout,
     )
 
     insert_order_template(order)
     return 0
 
 
-if "__name__" == "__main__":
+if __name__ == "__main__":
     exit(main())
