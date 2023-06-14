@@ -59,6 +59,7 @@ from typing import Dict, Union, TypeVar, List, Tuple, Iterable
 
 Server = TypeVar("Server")
 User = TypeVar("User")
+Logs = TypeVar("Logs")
 Task = namedtuple('Task', [
     'type',
     'user',
@@ -71,7 +72,20 @@ Task = namedtuple('Task', [
     'after',
 ])
 
-def get_tasks_by_agent(environ: _Environ, key: str, hostname: str) -> List[Task]:
+def save_orders_results():
+    """
+    This function performs SQL requests to store
+    order results in C2 database.
+    """
+
+    connection = connect(join(environ["WEBSCRIPTS_DATA_PATH"], "c2_ex_machina.db"))
+    cursor = connection.cursor()
+    for result in resuls:
+        cursor.execute('INSERT INTO "OrderResult" ("data","error","exitcode","requestDate","responseDate","startDate","endDate","agent","instance") VALUES (?, ?, ?, ?, ?, ?, ?, (SELECT ), ?);', result["Stdout"], result["Stderr"], result["Id"])
+    cursor.close()
+    connection.close()
+
+def get_tasks_by_agent(environ: _Environ, logger: Logs, key: str, hostname: str, system: str) -> List[Task]:
     """
     This function performs SQL requests to check
     agent key/hostname and to get tasks for the agent.
@@ -80,30 +94,20 @@ def get_tasks_by_agent(environ: _Environ, key: str, hostname: str) -> List[Task]
     connection = connect(join(environ["WEBSCRIPTS_DATA_PATH"], "c2_ex_machina.db"))
     cursor = connection.cursor()
     cursor.execute('SELECT "id" FROM "Agent" WHERE "name" = ? AND "key" = ?;', hostname, key)
+    
     if not cursor.fetchone():
-        return None
+        cursor.execute('SELECT "id" FROM "Agent" WHERE "name" = ?', hostname)
+        if cursor.fetchone():
+            logger.warning(f"Authentication error with agent {hostname!r} and {key!r}.")
+            return None
+        logger.warning(f"Create new agent {hostname!r}.")
+        cursor.execute('INSERT INTO "Agent" ("name", "key", "ips", "os") VALUES (?, ?, ?, (SELECT "id" FROM "OS" WHERE "name" = ?)) ON CONFLICT ("name") DO NOTHING;', hostname, key, environ["REMOTE_IP"], system)
+    
     cursor.execute('SELECT * FROM InstancesToAgents WHERE "agent" = ?;', hostname)
     orders = cursor.fetchall()
     cursor.close()
     connection.close()
     return [Task(*order) for order in orders]
-
-def check_is_agent(environ: _Environ) -> bool:
-    """
-    This function checks the client is a C2-EX-MACHINA agent using User-Agent.
-    """
-
-    return environ["HTTP_USER_AGENT"].strip().startswith("Agent-C2-EX-MACHINA ")
-
-
-def encode_data(
-    encoding: Callable, data: Dict[str, Union[str, Dict[str, str]]]
-) -> str:
-    """
-    This function encodes data to
-    """
-
-    return encoding(data)
 
 
 def malware_encode(data: Dict[str, Union[str, Dict[str, str]]]) -> str:
@@ -113,12 +117,20 @@ def malware_encode(data: Dict[str, Union[str, Dict[str, str]]]) -> str:
 
     raise NotImplemented
 
-def get_orders(environ: _Environ, next_request_time: int, agent_id: str, hostname: str) -> Dict[str, Union[str, Dict[str, str]]]:
+def malware_decode(data: Dict[str, Union[str, Dict[str, str]]]) -> str:
+    """
+    This function decodes results data for Malware Order API.
+    """
+
+    raise NotImplemented
+
+def get_orders(environ: _Environ, logger: Logs, next_request_time: int, key: str, hostname: str, system: str) -> Dict[str, Union[str, Dict[str, str]]]:
     """
     This function returns formatted orders for an agent.
     """
     
-    tasks = get_tasks_by_agent(environ, agent_id, hostname)
+    logger.debug("Get tasks for " + hostname + " (" + system + ")")
+    tasks = get_tasks_by_agent(environ, logger, key, hostname, system)
 
     if tasks is None:
         return None
@@ -144,23 +156,26 @@ def order(
     server: Server,
     agent_id: str,
     arguments: Dict[str, Dict[str, str]],
-    inputs: List[str],
+    inputs: None,
     csrf_token: str = None,
 ) -> Tuple[str, Dict[str, str], Union[str, Iterable[bytes]]]:
     """
     This function generates and returns response for Agent Order API.
     """
 
+    logger = server.logs
     user_agent = environ["HTTP_USER_AGENT"]
     user_agent_split = user_agent.split()
-    if not user_agent.get("Agent-C2-EX-MACHINA ") or len(user_agent_split) != 4:
+    is_agent = user_agent.startswith("Agent-C2-EX-MACHINA ")
+    if not is_agent or len(user_agent_split) != 4:
+        logger.info("Invalid user agent for C2-EX-MACHINA agent.")
         return (
             "403",
             {},
             b"",
         )
 
-    data = get_orders(environ, getattr(server.configuration, "c2_next_request_time", 300), agent_id, user_agent_split[-1])
+    data = get_orders(environ, logger, getattr(server.configuration, "c2_next_request_time", 300), agent_id, user_agent_split[-1], user_agent_split[2].strip("()").title())
     if data is None:
         return (
             "403",
@@ -168,9 +183,11 @@ def order(
             b"",
         )
 
-    is_agent = check_is_agent(environ, agent_id)
+    if arguments:
+        save_orders_results(arguments if is_agent else malware_decode(arguments))
+
     return (
         "200 OK",
         {},
-        encode_data(dumps if is_agent else malware_encode, data),
+        (dumps if is_agent else malware_encode)(data),
     )
