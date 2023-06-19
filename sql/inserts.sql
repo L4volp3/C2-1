@@ -103,3 +103,28 @@ INSERT INTO "OrderResult" (
 ) VALUES (
     ?, ?, ?, ?, ?, ?, ?, ?, ?
 );
+
+-- Insert OrderResult base
+INSERT INTO "OrderResult" (
+    "requestDate",
+    "agent",
+    "instance"
+) VALUES (
+    ?, ?, ?
+);
+
+-- Insert OrderResult data
+UPDATE "OrderResult" SET (
+    "data",
+    "error",
+    "exitcode",
+    "responseDate",
+    "startDate",
+    "endDate"
+) FROM (
+    ?, ?, ?, ?, ?, ?
+) WHERE (
+    "instance" = ? AND
+    "agent" = ? AND
+    "responseDate" IS NULL
+);

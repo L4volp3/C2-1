@@ -44,13 +44,13 @@ CREATE TABLE IF NOT EXISTS "OrderInstance"(
 );
 
 CREATE TABLE IF NOT EXISTS "OrderResult"(
-    "data" VARCHAR(256) NOT NULL,
-    "exitcode" INTEGER NOT NULL,
-    "error" VARCHAR(256) NOT NULL,
-    "requestDate" DATETIME NOT NULL,
-    "responseDate" DATETIME NOT NULL,
-    "startDate" DATETIME NOT NULL,
-    "endDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "data" VARCHAR(256),
+    "exitcode" INTEGER,
+    "error" VARCHAR(256),
+    "requestDate" DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "responseDate" DATETIME,
+    "startDate" DATETIME,
+    "endDate" DATETIME,
     "agent" INTEGER NOT NULL,
     "instance" INTEGER NOT NULL,
     FOREIGN KEY ("agent") REFERENCES "Agent" ("id"),
@@ -157,6 +157,7 @@ AND NOT EXISTS(
     SELECT "OrderResult"."agent" FROM "OrderResult"
     WHERE "OrderResult"."agent" = "Agent"."id"
     AND "OrderResult"."instance" = "OrderInstance"."id"
+    AND "OrderResult"."responseDate" IS NOT NULL
 ) UNION SELECT
     "OrderType"."name" AS "type",
     "User"."name" AS "user",
@@ -181,6 +182,7 @@ AND NOT EXISTS(
     SELECT "OrderResult"."agent" FROM "OrderResult"
     WHERE "OrderResult"."agent" = "Agent"."id"
     AND "OrderResult"."instance" = "OrderInstance"."id"
+    AND "OrderResult"."responseDate" IS NOT NULL
 );
 
 CREATE VIEW IF NOT EXISTS "Orders" AS

