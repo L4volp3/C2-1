@@ -211,3 +211,26 @@ INSERT INTO "OrderResult" (
     (SELECT "id" FROM "Agent" WHERE "name" = "TestAgent2"),
     (SELECT "value" FROM "LastId" WHERE "name" = "lastId")
 );
+
+INSERT INTO "OrderResult" (
+    "requestDate",
+    "agent",
+    "instance"
+) VALUES (
+    "2022-12-01 00:36:45",
+    (SELECT "id" FROM "Agent" WHERE "name" = "TestAgent2"),
+    (SELECT "value" FROM "LastId" WHERE "name" = "lastId")
+);
+
+UPDATE "OrderResult" SET
+    "data" = "azerty",
+    "error" = "No such file or directory ''",
+    "exitcode" = 5,
+    "responseDate" = "2022-12-01 01:04:35",
+    "startDate" = "2022-12-01 00:56:23",
+    "endDate" = "2022-12-01 00:56:25"
+WHERE (
+    "instance" = (SELECT "value" FROM "LastId" WHERE "name" = "lastId") AND
+    "agent" = (SELECT "id" FROM "Agent" WHERE "name" = "TestAgent2") AND
+    "responseDate" IS NULL
+);
