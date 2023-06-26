@@ -53,57 +53,96 @@ from time import time
 from json import dumps
 from os import _Environ
 from os.path import join
+from sqlite3 import connect
+from datetime import datetime
 from collections import namedtuple
-from collections.abc import Callable
 from typing import Dict, Union, TypeVar, List, Tuple, Iterable
 
 Server = TypeVar("Server")
 User = TypeVar("User")
 Logs = TypeVar("Logs")
-Task = namedtuple('Task', [
-    'type',
-    'user',
-    'name',
-    'description',
-    'data',
-    'filename',
-    'timestamp',
-    'id',
-    'after',
-])
+Task = namedtuple(
+    "Task",
+    [
+        "type",
+        "user",
+        "name",
+        "description",
+        "data",
+        "filename",
+        "timestamp",
+        "id",
+        "after",
+    ],
+)
 
-def save_orders_results(result: Dict[str, Union[str, int]], hostname: str, key: str) -> None:
+
+def save_orders_results(
+    environ: _Environ, results: Dict[str, Union[str, int]], hostname: str, key: str
+) -> None:
     """
     This function performs SQL requests to store
     order results in C2 database.
     """
 
-    connection = connect(join(environ["WEBSCRIPTS_DATA_PATH"], "c2_ex_machina.db"))
+    connection = connect(
+        join(environ["WEBSCRIPTS_DATA_PATH"], "c2_ex_machina.db")
+    )
     cursor = connection.cursor()
-    for result in resuls:
-        cursor.execute('UPDATE "OrderResult" SET ("data", "error", "exitcode", "responseDate", "startDate", "endDate") FROM (?, ?, ?, ?, ?, ?) WHERE ("instance" = ? AND "agent" = (SELECT "id" FROM "Agent" WHERE "name"=? AND "key"=?) AND "responseDate" IS NULL);', result["Stdout"], result["Stderr"], result["Status"], datetime.now(), datetime.fromtimestamp(result["StartTime"]), datetime.fromtimestamp(result["EndTime"]), result["Id"], hostname, key)
+    for result in results:
+        cursor.execute(
+            'UPDATE "OrderResult" SET ("data", "error", "exitcode", "responseDate", "startDate", "endDate") FROM (?, ?, ?, ?, ?, ?) WHERE ("instance" = ? AND "agent" = (SELECT "id" FROM "Agent" WHERE "name"=? AND "key"=?) AND "responseDate" IS NULL);',
+            result["Stdout"],
+            result["Stderr"],
+            result["Status"],
+            datetime.now(),
+            datetime.fromtimestamp(result["StartTime"]),
+            datetime.fromtimestamp(result["EndTime"]),
+            result["Id"],
+            hostname,
+            key,
+        )
     cursor.close()
     connection.close()
 
-def get_tasks_by_agent(environ: _Environ, logger: Logs, key: str, hostname: str, system: str) -> List[Task]:
+
+def get_tasks_by_agent(
+    environ: _Environ, logger: Logs, key: str, hostname: str, system: str
+) -> List[Task]:
     """
     This function performs SQL requests to check
     agent key/hostname and to get tasks for the agent.
     """
 
-    connection = connect(join(environ["WEBSCRIPTS_DATA_PATH"], "c2_ex_machina.db"))
+    connection = connect(
+        join(environ["WEBSCRIPTS_DATA_PATH"], "c2_ex_machina.db")
+    )
     cursor = connection.cursor()
-    cursor.execute('SELECT "id" FROM "Agent" WHERE "name" = ? AND "key" = ?;', hostname, key)
-    
+    cursor.execute(
+        'SELECT "id" FROM "Agent" WHERE "name" = ? AND "key" = ?;',
+        hostname,
+        key,
+    )
+
     if not cursor.fetchone():
         cursor.execute('SELECT "id" FROM "Agent" WHERE "name" = ?', hostname)
         if cursor.fetchone():
-            logger.warning(f"Authentication error with agent {hostname!r} and {key!r}.")
+            logger.warning(
+                f"Authentication error with agent {hostname!r} and {key!r}."
+            )
             return None
         logger.warning(f"Create new agent {hostname!r}.")
-        cursor.execute('INSERT INTO "Agent" ("name", "key", "ips", "os") VALUES (?, ?, ?, (SELECT "id" FROM "OS" WHERE "name" = ?)) ON CONFLICT ("name") DO NOTHING;', hostname, key, environ["REMOTE_IP"], system)
-    
-    cursor.execute('SELECT * FROM InstancesToAgents WHERE "agent" = ?;', hostname)
+        cursor.execute(
+            'INSERT INTO "Agent" ("name", "key", "ips", "os") VALUES (?, ?, ?, (SELECT "id" FROM "OS" WHERE "name" = ?)) ON CONFLICT ("name") DO NOTHING;',
+            hostname,
+            key,
+            environ["REMOTE_IP"],
+            system,
+        )
+
+    cursor.execute(
+        'SELECT * FROM InstancesToAgents WHERE "agent" = ?;', hostname
+    )
     orders = cursor.fetchall()
     cursor.close()
     connection.close()
@@ -115,40 +154,53 @@ def malware_encode(data: Dict[str, Union[str, Dict[str, str]]]) -> str:
     This function encodes response object for Malware Order API.
     """
 
-    raise NotImplemented
+    raise NotImplementedError
+
 
 def malware_decode(data: Dict[str, Union[str, Dict[str, str]]]) -> str:
     """
     This function decodes results data for Malware Order API.
     """
 
-    raise NotImplemented
+    raise NotImplementedError
 
-def get_orders(environ: _Environ, logger: Logs, next_request_time: int, key: str, hostname: str, system: str) -> Dict[str, Union[str, Dict[str, str]]]:
+
+def get_orders(
+    environ: _Environ,
+    logger: Logs,
+    next_request_time: int,
+    key: str,
+    hostname: str,
+    system: str,
+) -> Dict[str, Union[str, Dict[str, str]]]:
     """
     This function returns formatted orders for an agent.
     """
-    
+
     logger.debug("Get tasks for " + hostname + " (" + system + ")")
     tasks = get_tasks_by_agent(environ, logger, key, hostname, system)
 
     if tasks is None:
         return None
 
-    api_webscript = { 
+    api_webscript = {
         "NextRequestTime": time() + next_request_time,
-        "Tasks": [{
-            "Type": task.type,
-            "User": task.user,
-            "Description": task.description,
-            "Data": task.data,
-            "Timestamp": task.timestamp,
-            "Id": task.id,
-            "After": task.after,       
-        } for task in tasks]
+        "Tasks": [
+            {
+                "Type": task.type,
+                "User": task.user,
+                "Description": task.description,
+                "Data": task.data,
+                "Timestamp": task.timestamp,
+                "Id": task.id,
+                "After": task.after,
+            }
+            for task in tasks
+        ],
     }
 
     return api_webscript
+
 
 def order(
     environ: _Environ,
@@ -176,7 +228,14 @@ def order(
         )
 
     hostname = user_agent_split[-1]
-    data = get_orders(environ, logger, getattr(server.configuration, "c2_next_request_time", 300), agent_id, , user_agent_split[2].strip("()").title())
+    data = get_orders(
+        environ,
+        logger,
+        getattr(server.configuration, "c2_next_request_time", 300),
+        agent_id,
+        hostname,
+        user_agent_split[2].strip("()").title(),
+    )
     if data is None:
         return (
             "403",
@@ -191,17 +250,24 @@ def order(
             "Stderr",
             "Status",
             "StartTime",
-            'EndTime',
+            "EndTime",
         ):
             if arguments.get(key) is None:
-                logger.error('There is a key missing in the agent response: ' + key)
+                logger.error(
+                    "There is a key missing in the agent response: " + key
+                )
                 return (
-                    '400',
+                    "400",
                     {},
                     (),
                 )
-        logger.debug('Save a new order result for agent ' + hostname)
-        save_orders_results(arguments if is_agent else malware_decode(arguments), hostname, agent_id)
+        logger.debug("Save a new order result for agent " + hostname)
+        save_orders_results(
+            environ,
+            arguments if is_agent else malware_decode(arguments),
+            hostname,
+            agent_id,
+        )
 
     return (
         "200 OK",
