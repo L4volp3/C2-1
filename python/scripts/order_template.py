@@ -52,7 +52,7 @@ def insert_order_template(order_template: OrderTemplate) -> None:
 
     connection = connect(join(environ["WEBSCRIPTS_DATA_PATH"], "c2_ex_machina.db"))
     cursor = connection.cursor()
-    cursor.execute('INSERT INTO "OrderTemplate" ("type","user","data","readPermission","executePermission","after","name","description","filename","timeout") VALUES ((SELECT "id" FROM "OrderType" WHERE "name" = ?),(SELECT "id" FROM "User" WHERE "name" = ?),?,?,(SELECT "id" FROM "OrderTemplate" WHERE "name" = ?),?,?,?,?);', *order_template)
+    cursor.execute('INSERT INTO "OrderTemplate" ("type","user","data","readPermission","executePermission","after","name","description","filename","timeout") VALUES ((SELECT "id" FROM "OrderType" WHERE "name" = ?),(SELECT "id" FROM "User" WHERE "name" = ?),?,?,(SELECT "id" FROM "OrderTemplate" WHERE "name" = ?),?,?,?,?);', order_template)
     cursor.close()
     connection.close()
 

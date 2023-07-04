@@ -46,7 +46,7 @@ def insert_order_instance(order_instance: OrderInstance, target_name: str, max_u
 
     connection = connect(join(environ["WEBSCRIPTS_DATA_PATH"], "c2_ex_machina.db"))
     cursor = connection.cursor()
-    cursor.execute('INSERT INTO "OrderInstance" ("startDate", "user", "orderTargetType", "template") VALUES (?, (SELECT "id" FROM "User" WHERE "name" = ?), (SELECT CASE WHEN "Agent" = ? THEN 1 WHEN "Group" = ? THEN 0 END AS "TargetType"), (SELECT "id" FROM "OrderTemplate" WHERE "name" = ? AND "executePermission" <= ?));', order_instance.startDate, order_instance.user, order_instance.orderTargetType, order_instance.orderTargetType, order_instance.template, max_user_permission)
+    cursor.execute('INSERT INTO "OrderInstance" ("startDate", "user", "orderTargetType", "template") VALUES (?, (SELECT "id" FROM "User" WHERE "name" = ?), (SELECT CASE WHEN "Agent" = ? THEN 1 WHEN "Group" = ? THEN 0 END AS "TargetType"), (SELECT "id" FROM "OrderTemplate" WHERE "name" = ? AND "executePermission" <= ?));', (order_instance.startDate, order_instance.user, order_instance.orderTargetType, order_instance.orderTargetType, order_instance.template, max_user_permission))
     if is_group:
         table_insert = "OrderToGroup"
         table_select = "AgentsGroup"
@@ -55,7 +55,7 @@ def insert_order_instance(order_instance: OrderInstance, target_name: str, max_u
         table_insert = "OrderToAgent"
         table_select = "Agent"
         column = "agent"
-    cursor.execute('INSERT INTO "' + table_insert + '" ("' + column + '","instance") VALUES ((SELECT "id" FROM "' + table_select + '" WHERE "name" = ?),last_insert_rowid());', target_name)
+    cursor.execute('INSERT INTO "' + table_insert + '" ("' + column + '","instance") VALUES ((SELECT "id" FROM "' + table_select + '" WHERE "name" = ?),last_insert_rowid());', (target_name,))
     cursor.close()
     connection.close()
 
@@ -67,7 +67,7 @@ def parse_args(max_privilege_level: int) -> Namespace:
 
     connection = connect(join(environ["WEBSCRIPTS_DATA_PATH"], "c2_ex_machina.db"))
     cursor = connection.cursor()
-    cursor.execute('SELECT name FROM OrderTemplate WHERE executePermission=?;', max_privilege_level)
+    cursor.execute('SELECT name FROM OrderTemplate WHERE executePermission=?;', (max_privilege_level,))
     order_template_name = {x[0] for x in cursor.fetchall()}
     cursor.execute('SELECT name FROM Agent UNION SELECT name FROM AgentsGroup;')
     target_names = {x[0] for x in cursor.fetchall()}

@@ -92,15 +92,17 @@ def save_orders_results(
     for result in results:
         cursor.execute(
             'UPDATE "OrderResult" SET ("data", "error", "exitcode", "responseDate", "startDate", "endDate") FROM (?, ?, ?, ?, ?, ?) WHERE ("instance" = ? AND "agent" = (SELECT "id" FROM "Agent" WHERE "name"=? AND "key"=?) AND "responseDate" IS NULL);',
-            result["Stdout"],
-            result["Stderr"],
-            result["Status"],
-            datetime.now(),
-            datetime.fromtimestamp(result["StartTime"]),
-            datetime.fromtimestamp(result["EndTime"]),
-            result["Id"],
-            hostname,
-            key,
+            (
+                result["Stdout"],
+                result["Stderr"],
+                result["Status"],
+                datetime.now(),
+                datetime.fromtimestamp(result["StartTime"]),
+                datetime.fromtimestamp(result["EndTime"]),
+                result["Id"],
+                hostname,
+                key,
+            )
         )
     cursor.close()
     connection.close()
@@ -120,12 +122,14 @@ def get_tasks_by_agent(
     cursor = connection.cursor()
     cursor.execute(
         'SELECT "id" FROM "Agent" WHERE "name" = ? AND "key" = ?;',
-        hostname,
-        key,
+        (
+            hostname,
+            key,
+        )
     )
 
     if not cursor.fetchone():
-        cursor.execute('SELECT "id" FROM "Agent" WHERE "name" = ?', hostname)
+        cursor.execute('SELECT "id" FROM "Agent" WHERE "name" = ?', (hostname,))
         if cursor.fetchone():
             logger.warning(
                 f"Authentication error with agent {hostname!r} and {key!r}."
@@ -134,14 +138,16 @@ def get_tasks_by_agent(
         logger.warning(f"Create new agent {hostname!r}.")
         cursor.execute(
             'INSERT INTO "Agent" ("name", "key", "ips", "os") VALUES (?, ?, ?, (SELECT "id" FROM "OS" WHERE "name" = ?)) ON CONFLICT ("name") DO NOTHING;',
-            hostname,
-            key,
-            environ["REMOTE_IP"],
-            system,
+            (
+                hostname,
+                key,
+                environ["REMOTE_IP"],
+                system,
+            )
         )
 
     cursor.execute(
-        'SELECT * FROM InstancesToAgents WHERE "agent" = ?;', hostname
+        'SELECT * FROM InstancesToAgents WHERE "agent" = ?;', (hostname,)
     )
     orders = cursor.fetchall()
     cursor.close()
