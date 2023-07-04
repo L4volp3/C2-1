@@ -104,6 +104,7 @@ def save_orders_results(
                 key,
             )
         )
+    connection.commit()
     cursor.close()
     connection.close()
 
@@ -145,6 +146,7 @@ def get_tasks_by_agent(
                 system,
             )
         )
+        connection.commit()
 
     cursor.execute(
         'SELECT * FROM InstancesToAgents WHERE "agent" = ?;', (hostname,)
@@ -190,7 +192,7 @@ def get_orders(
         return None
 
     api_webscript = {
-        "NextRequestTime": time() + next_request_time,
+        "NextRequestTime": int(time() + next_request_time) + 1,
         "Tasks": [
             {
                 "Type": task.type,
