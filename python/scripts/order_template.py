@@ -45,14 +45,20 @@ OrderTemplate = namedtuple(
     ],
 )
 
+
 def insert_order_template(order_template: OrderTemplate) -> None:
     """
     This function inserts an OrderTemplate into the database.
     """
 
-    connection = connect(join(environ["WEBSCRIPTS_DATA_PATH"], "c2_ex_machina.db"))
+    connection = connect(
+        join(environ["WEBSCRIPTS_DATA_PATH"], "c2_ex_machina.db")
+    )
     cursor = connection.cursor()
-    cursor.execute('INSERT INTO "OrderTemplate" ("type","user","data","readPermission","executePermission","after","name","description","filename","timeout") VALUES ((SELECT "id" FROM "OrderType" WHERE "name" = ?),(SELECT "id" FROM "User" WHERE "name" = ?),?,?,(SELECT "id" FROM "OrderTemplate" WHERE "name" = ?),?,?,?,?);', order_template)
+    cursor.execute(
+        'INSERT INTO "OrderTemplate" ("type","user","data","readPermission","executePermission","after","name","description","filename","timeout") VALUES ((SELECT "id" FROM "OrderType" WHERE "name" = ?),(SELECT "id" FROM "User" WHERE "name" = ?),?,?,(SELECT "id" FROM "OrderTemplate" WHERE "name" = ?),?,?,?,?);',
+        order_template,
+    )
     cursor.close()
     connection.close()
 
@@ -62,9 +68,11 @@ def parse_args() -> Namespace:
     This function parses the variables passed as arguments
     """
 
-    connection = connect(join(environ["WEBSCRIPTS_DATA_PATH"], "c2_ex_machina.db"))
+    connection = connect(
+        join(environ["WEBSCRIPTS_DATA_PATH"], "c2_ex_machina.db")
+    )
     cursor = connection.cursor()
-    cursor.execute('SELECT name FROM OrderType;')
+    cursor.execute("SELECT name FROM OrderType;")
     order_types = {x[0] for x in cursor.fetchall()}
     cursor.close()
     connection.close()
@@ -98,17 +106,35 @@ def parse_args() -> Namespace:
         type=int,
         help="Minimum privilege level (group level) to read task output.",
     )
-    add_argument("--execute-premission", default=max_privilege_level, type=int, help=help="Minimum privilege level (group level) to start task execution.",)
+    add_argument(
+        "--execute-premission",
+        default=max_privilege_level,
+        type=int,
+        help="Minimum privilege level (group level) to start task execution.",
+    )
     add_argument(
         "--after",
         type=str,
         default=None,
         help="Order Id or null, to execute this order after any precedent order",
     )
-    add_argument("--name", type=str, required=True, help="The new order template name.")
-    add_argument("--description", type=str, required=True, help="The new order template description.")
-    add_argument("--filename", type=str, help="Filename for UPLOAD file destination path.")
-    add_argument("--timeout", type=int, help="Timeout to stop the task if is blocked.")
+    add_argument(
+        "--name", type=str, required=True, help="The new order template name."
+    )
+    add_argument(
+        "--description",
+        type=str,
+        required=True,
+        help="The new order template description.",
+    )
+    add_argument(
+        "--filename",
+        type=str,
+        help="Filename for UPLOAD file destination path.",
+    )
+    add_argument(
+        "--timeout", type=int, help="Timeout to stop the task if is blocked."
+    )
 
     return parser.parse_args()
 

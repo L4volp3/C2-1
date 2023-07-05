@@ -58,7 +58,9 @@ def get_user_groups(
     return groups_ids
 
 
-def user_authentication(ldap_client: LDAPObject, username: str) -> Dict[str, str]:
+def user_authentication(
+    ldap_client: LDAPObject, username: str
+) -> Dict[str, str]:
     """
     Recovers the user's id and attributes by specifiying the search base,
     based on the ldap tree

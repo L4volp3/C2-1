@@ -78,7 +78,10 @@ Task = namedtuple(
 
 
 def save_orders_results(
-    environ: _Environ, results: Dict[str, Union[str, int]], hostname: str, key: str
+    environ: _Environ,
+    results: Dict[str, Union[str, int]],
+    hostname: str,
+    key: str,
 ) -> None:
     """
     This function performs SQL requests to store
@@ -102,7 +105,7 @@ def save_orders_results(
                 result["Id"],
                 hostname,
                 key,
-            )
+            ),
         )
     connection.commit()
     cursor.close()
@@ -126,11 +129,13 @@ def get_tasks_by_agent(
         (
             hostname,
             key,
-        )
+        ),
     )
 
     if not cursor.fetchone():
-        cursor.execute('SELECT "id" FROM "Agent" WHERE "name" = ?', (hostname,))
+        cursor.execute(
+            'SELECT "id" FROM "Agent" WHERE "name" = ?', (hostname,)
+        )
         if cursor.fetchone():
             logger.warning(
                 f"Authentication error with agent {hostname!r} and {key!r}."
@@ -144,7 +149,7 @@ def get_tasks_by_agent(
                 key,
                 environ["REMOTE_IP"],
                 system,
-            )
+            ),
         )
         connection.commit()
 
@@ -252,7 +257,9 @@ def order(
         )
 
     if arguments:
-        for task in (arguments if is_agent else malware_decode(arguments)).get("tasks"):
+        for task in (arguments if is_agent else malware_decode(arguments)).get(
+            "tasks"
+        ):
             for key in (
                 "Id",
                 "Stdout",
