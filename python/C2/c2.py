@@ -252,30 +252,26 @@ def order(
         )
 
     if arguments:
-        for key in (
-            "Id",
-            "Stdout",
-            "Stderr",
-            "Status",
-            "StartTime",
-            "EndTime",
-        ):
-            if arguments.get(key) is None:
-                logger.error(
-                    "There is a key missing in the agent response: " + key
-                )
-                return (
-                    "400",
-                    {},
-                    (),
-                )
-        logger.debug("Save a new order result for agent " + hostname)
-        save_orders_results(
-            environ,
-            arguments if is_agent else malware_decode(arguments),
-            hostname,
-            agent_id,
-        )
+        for task in (arguments if is_agent else malware_decode(arguments)).get("tasks"):
+            for key in (
+                "Id",
+                "Stdout",
+                "Stderr",
+                "Status",
+                "StartTime",
+                "EndTime",
+            ):
+                if task.get(key) is None:
+                    logger.error(
+                        "There is a key missing in the agent response: " + key
+                    )
+                    return (
+                        "400",
+                        {},
+                        (),
+                    )
+            logger.debug("Save a new order result for agent " + hostname)
+            save_orders_results(environ, task, hostname, agent_id)
 
     return (
         "200 OK",
