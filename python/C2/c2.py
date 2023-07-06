@@ -115,7 +115,12 @@ def save_orders_results(
 
 
 def get_tasks_by_agent(
-    environ: _Environ, logger: Logs, key: str, hostname: str, system: str, user: User
+    environ: _Environ,
+    logger: Logs,
+    key: str,
+    hostname: str,
+    system: str,
+    user: User,
 ) -> List[Task]:
     """
     This function performs SQL requests to check
@@ -146,9 +151,7 @@ def get_tasks_by_agent(
         logger.warning(f"Create new agent {hostname!r}.")
         cursor.execute(
             'INSERT INTO "OS" ("name") VALUES (?) ON CONFLICT DO NOTHING;',
-            (
-                system,
-            ),
+            (system,),
         )
         cursor.execute(
             'INSERT INTO "Agent" ("name", "key", "ips", "os") VALUES (?, ?, ?, (SELECT "id" FROM "OS" WHERE "name" = ?)) ON CONFLICT ("name") DO NOTHING;',
@@ -183,31 +186,26 @@ def get_tasks_by_agent(
         )
         cursor.execute(
             'SELECT "id" FROM "GroupOrders" WHERE "group" = ? AND "add_to_new_agent";',
-            (
-                system,
-            ),
+            (system,),
         )
         tasks = cursor.fetchall()
         for task in tasks:
             cursor.execute(
                 'INSERT INTO "OrderResult" ("agent", "instance") VALUES (?, (SELECT "id" FROM "Agent" WHERE "name" = ?), ?);',
-                (
-                    hostname,
-                    task[0]
-                )
+                (hostname, task[0]),
             )
 
     cursor.execute(
         'SELECT * FROM TasksToExecute WHERE "agent" = ?;', (hostname,)
     )
     orders = cursor.fetchall()
-    
+
     for order in orders:
         cursor.execute(
             'UPDATE "OrderResult" SET ("requestDate" = ?) WHERE ("instance" = ? AND "agent" = (SELECT "id" FROM "Agent" WHERE "name" = ? AND "key" = ?) AND "requestDate" IS NULL);',
-            (datetime.now(), order[8], hostname, key)
+            (datetime.now(), order[8], hostname, key),
         )
-    
+
     connection.commit()
     cursor.close()
     connection.close()
@@ -259,9 +257,11 @@ def get_orders(
                 "Description": task.description,
                 "Data": task.data,
                 "Filename": task.filename,
-                "Timestamp": int(mktime(
-                    strptime(task.timestamp, "%Y-%m-%d %H:%M:%S")
-                )) if task.timestamp else task.timestamp,
+                "Timestamp": int(
+                    mktime(strptime(task.timestamp, "%Y-%m-%d %H:%M:%S"))
+                )
+                if task.timestamp
+                else task.timestamp,
                 "Timeout": task.timeout,
                 "Id": task.id,
                 "After": task.after,
@@ -301,7 +301,7 @@ def order(
     hostname = user_agent_split[-1]
 
     if arguments:
-        results = (arguments if is_agent else malware_decode(arguments))
+        results = arguments if is_agent else malware_decode(arguments)
         for task in results.get("Tasks", []):
             for key in (
                 "Id",

@@ -78,7 +78,7 @@ def insert_order_instance(
         )
         cursor.execute(
             'SELECT "name" FROM "Groups" WHERE "Groups"."group" = ?;',
-            (target_name,)
+            (target_name,),
         )
         targets = cursor.fetchall()
     else:
@@ -91,10 +91,7 @@ def insert_order_instance(
     for target in targets:
         cursor.execute(
             'INSERT INTO "OrderResult" ("agent", "instance") VALUES (?, (SELECT "id" FROM "Agent" WHERE "name" = ?), ?);',
-            (
-                target[0],
-                instance_id
-            )
+            (target[0], instance_id),
         )
     connection.commit()
     cursor.close()
