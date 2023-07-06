@@ -24,10 +24,14 @@ This script stores a new OrderTemplate in C2-EX-MACHINA database.
 
 from argparse import ArgumentParser, Namespace
 from collections import namedtuple
+from sys import exit, argv, stdin
+from base64 import b64decode
+from sqlite3 import connect
+from time import strftime
 from os.path import join
 from json import loads
+from typing import Set
 from os import environ
-from sys import exit
 
 OrderTemplate = namedtuple(
     "OrderTemplate",
@@ -63,9 +67,9 @@ def insert_order_template(order_template: OrderTemplate) -> None:
     connection.close()
 
 
-def parse_args() -> Namespace:
+def get_order_types() -> Set[str]:
     """
-    This function parses the variables passed as arguments
+    This function returns orders types.
     """
 
     connection = connect(
@@ -77,6 +81,16 @@ def parse_args() -> Namespace:
     cursor.close()
     connection.close()
 
+    return order_types
+
+
+def parse_args() -> Namespace:
+    """
+    This function parses the variables passed as arguments
+    """
+
+    order_types = get_order_types()
+
     max_privilege_level = max(loads(environ["USER"])["groups"])
 
     parser = ArgumentParser(
@@ -85,20 +99,16 @@ def parse_args() -> Namespace:
         )
     )
     add_argument = parser.add_argument
+    add_argument("name", type=str, help="The new order template name.")
     add_argument(
-        "--type",
-        required=True,
-        choices=order_types,
-        help="Operation type name (like: 'COMMAND', 'DOWNLOAD', 'UPLOAD', ...)",
+        "description",
+        type=str,
+        help="The new order template description.",
     )
     add_argument(
-        "--data",
-        type=str,
-        required=True,
-        help=(
-            "Code for scripts and COMMAND or filename"
-            " for UPLOAD and DOWNLOAD type"
-        ),
+        "type",
+        choices=order_types,
+        help="Operation type name (like: 'COMMAND', 'DOWNLOAD', 'UPLOAD', ...)",
     )
     add_argument(
         "--read-permission",
@@ -107,7 +117,7 @@ def parse_args() -> Namespace:
         help="Minimum privilege level (group level) to read task output.",
     )
     add_argument(
-        "--execute-premission",
+        "--execute-permission",
         default=max_privilege_level,
         type=int,
         help="Minimum privilege level (group level) to start task execution.",
@@ -115,17 +125,9 @@ def parse_args() -> Namespace:
     add_argument(
         "--after",
         type=str,
-        default=None,
-        help="Order Id or null, to execute this order after any precedent order",
-    )
-    add_argument(
-        "--name", type=str, required=True, help="The new order template name."
-    )
-    add_argument(
-        "--description",
-        type=str,
-        required=True,
-        help="The new order template description.",
+        help=(
+            "Order Id or null, to execute this order after any precedent order"
+        ),
     )
     add_argument(
         "--filename",
@@ -144,11 +146,35 @@ def main() -> int:
     This is the main function to starts the script from the command line.
     """
 
+    if "--list" in argv:
+        types = get_order_types()
+        print("Types:", "\n\t" + "\n\t".join(repr(type_) for type_ in types))
+        return 2
+
     arguments = parse_args()
+    data = (
+        b64decode(stdin.buffer.read())
+        if environ.get("HTTP_COOKIE") is not None
+        else stdin.buffer.read()
+    )
+
+    if len(data) > 255:
+        filename = (
+            "filename_" + strftime("%Y_%m_%d_%H_%M_%S") + ".file.c2_ex_machina"
+        )
+        with open(
+            join(environ["WEBSCRIPTS_DATA_PATH"], "c2_data_files", filename),
+            "wb",
+        ) as file:
+            file.write(data)
+        data = filename
+    else:
+        data = data.decode("latin1")
+
     order = OrderTemplate(
         arguments.type,
         loads(environ["USER"])["name"],
-        arguments.data,
+        data,
         arguments.readpermission,
         arguments.executepermission,
         arguments.after,
