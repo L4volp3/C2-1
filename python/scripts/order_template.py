@@ -50,7 +50,7 @@ OrderTemplate = namedtuple(
 )
 
 
-def insert_order_template(order_template: OrderTemplate) -> None:
+def insert_order_template(order_template: OrderTemplate, id_: int) -> None:
     """
     This function inserts an OrderTemplate into the database.
     """
@@ -60,9 +60,17 @@ def insert_order_template(order_template: OrderTemplate) -> None:
     )
     cursor = connection.cursor()
     cursor.execute(
-        'INSERT INTO "OrderTemplate" ("type","user","data","readPermission","executePermission","after","name","description","filename","timeout") VALUES ((SELECT "id" FROM "OrderType" WHERE "name" = ?),(SELECT "id" FROM "User" WHERE "name" = ?),?,?,(SELECT "id" FROM "OrderTemplate" WHERE "name" = ?),?,?,?,?);',
+        'INSERT INTO "User" ("name", "user") VALUES (?, ?) ON CONFLICT DO NOTHING;',
+        (
+            order_template.user,
+            id_,
+        ),
+    )
+    cursor.execute(
+        'INSERT INTO "OrderTemplate" ("type","user","data","readPermission","executePermission","after","name","description","filename","timeout") VALUES ((SELECT "id" FROM "OrderType" WHERE "name" = ?),(SELECT "id" FROM "User" WHERE "name" = ?),?,?,?,(SELECT "id" FROM "OrderTemplate" WHERE "name" = ?),?,?,?,?);',
         order_template,
     )
+    connection.commit()
     cursor.close()
     connection.close()
 
@@ -171,12 +179,13 @@ def main() -> int:
     else:
         data = data.decode("latin1")
 
+    user = loads(environ["USER"])
     order = OrderTemplate(
         arguments.type,
-        loads(environ["USER"])["name"],
+        user["name"],
         data,
-        arguments.readpermission,
-        arguments.executepermission,
+        arguments.read_permission,
+        arguments.execute_permission,
         arguments.after,
         arguments.name,
         arguments.description,
@@ -184,7 +193,8 @@ def main() -> int:
         arguments.timeout,
     )
 
-    insert_order_template(order)
+    insert_order_template(order, user["id"])
+    print("Done.")
     return 0
 
 

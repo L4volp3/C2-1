@@ -47,6 +47,11 @@ WHERE "agent" LIKE '%?%';
 SELECT "task", "group", "groupDescription", "taskDescription", "data", "start", "user"
 FROM "GroupOrders";
 
+-- Get Orders Instance for new agent of a specific Group
+SELECT "task", "group", "groupDescription", "description", "data", "start", "user"
+FROM "GroupOrders"
+WHERE "group" = ? AND "add_to_new_agent";
+
 -- Get Orders Instance by matching Group
 SELECT "task", "group", "groupDescription", "description", "data", "start", "user"
 FROM "GroupOrders"

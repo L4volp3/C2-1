@@ -34,11 +34,12 @@ CREATE TABLE IF NOT EXISTS "OrderTemplate" (
 
 CREATE TABLE IF NOT EXISTS "OrderInstance"(
     "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    "startDate" DATETIME NOT NULL,
+    "startDate" DATETIME,
     "creationDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "user" INTEGER NOT NULL,
     "orderTargetType" INTEGER NOT NULL DEFAULT 1,  -- if 1 then Agent else Group
     "template" INTEGER NOT NULL,
+    "add_to_new_agent" BOOL NOT NULL DEFAULT FALSE,
     FOREIGN KEY ("user") REFERENCES "User" ("id"),
     FOREIGN KEY ("template") REFERENCES "OrderTemplate" ("id")
 );
@@ -47,7 +48,8 @@ CREATE TABLE IF NOT EXISTS "OrderResult"(
     "data" VARCHAR(256),
     "exitcode" INTEGER,
     "error" VARCHAR(256),
-    "requestDate" DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "creationDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "requestDate" DATETIME,
     "responseDate" DATETIME,
     "startDate" DATETIME,
     "endDate" DATETIME,
@@ -130,6 +132,27 @@ INNER JOIN "UnionGroupAgent" ON "UnionGroupAgent"."agent" = "Agent"."id"
 INNER JOIN "AgentsGroup" ON "UnionGroupAgent"."group" = "AgentsGroup"."id"
 INNER JOIN "User" ON "UnionGroupAgent"."user" = "User"."id";
 
+CREATE VIEW IF NOT EXISTS "TasksToExecute" AS
+SELECT
+    "OrderType"."name" AS "type",
+    "User"."name" AS "user",
+    "OrderTemplate"."name" AS "name",
+    "OrderTemplate"."description" AS "description",
+    "OrderTemplate"."data" AS "data",
+    "OrderTemplate"."filename" AS "filename",
+    "OrderInstance"."startDate" AS "timestamp",
+    "OrderTemplate"."timeout" AS "timeout",
+    "OrderInstance"."id" AS "id",
+    "OrderTemplate"."after" AS "after",
+    "Agent"."name" AS "agent"
+FROM "OrderResult"
+INNER JOIN "Agent" ON "Agent"."id" = "OrderResult"."agent"
+INNER JOIN "OrderInstance" ON "OrderInstance"."id" = "OrderResult"."instance"
+INNER JOIN "OrderTemplate" ON "OrderInstance"."template" = "OrderTemplate"."id"
+INNER JOIN "OrderType" ON "OrderTemplate"."type" = "OrderType"."id"
+INNER JOIN "User" ON "OrderInstance"."user" = "User"."id"
+WHERE "OrderResult"."responseDate" IS NULL;
+
 CREATE VIEW IF NOT EXISTS "InstancesToAgents" AS
 SELECT
     "OrderType"."name" AS "type",
@@ -143,7 +166,8 @@ SELECT
     "OrderInstance"."id" AS "id",
     "OrderTemplate"."after" AS "after",
     "AgentsGroup"."name" AS "source",
-    "Agent"."name" AS "agent"
+    "Agent"."name" AS "agent",
+    "OrderInstance"."add_to_new_agent" AS "add_to_new_agent"
 FROM "OrderInstance" 
 CROSS JOIN "OrderToGroup" ON "OrderToGroup"."instance" = "OrderInstance"."id"
 CROSS JOIN "AgentsGroup" ON "AgentsGroup"."id" = "OrderToGroup"."group"
@@ -170,7 +194,8 @@ AND NOT EXISTS(
     "OrderInstance"."id" AS "id",
     "OrderTemplate"."after" AS "after",
     "Agent"."name" AS "source",
-    "Agent"."name" AS "agent"
+    "Agent"."name" AS "agent",
+    NULL
 FROM "Agent"
 CROSS JOIN "OrderToAgent" ON "Agent"."id" = "OrderToAgent"."agent"
 CROSS JOIN "OrderInstance" ON "OrderToAgent"."instance" = "OrderInstance"."id"
@@ -199,7 +224,8 @@ SELECT
     "OrderInstance"."startDate" AS "start",
     "OrderInstance"."orderTargetType" AS "targetType",
     "OrderRequired"."name" AS "requirementTask",
-    "OrderInstance"."id" AS "id"
+    "OrderInstance"."id" AS "id",
+    "OrderInstance"."add_to_new_agent" AS "add_to_new_agent"
 FROM "OrderTemplate"
 INNER JOIN "OrderInstance" ON "OrderTemplate"."id" = "OrderInstance"."template"
 INNER JOIN "OrderType" ON "OrderTemplate"."type" = "OrderType"."id"
@@ -207,6 +233,7 @@ INNER JOIN "OrderTemplate" AS "OrderRequired" ON "OrderTemplate"."after" = "Orde
 
 CREATE VIEW IF NOT EXISTS "AgentOrders" AS
 SELECT
+    "Orders"."id" AS "id",
     "Orders"."task" AS "task",
     "Agent"."name" AS "agent",
     "Orders"."description" AS "description",
@@ -223,13 +250,15 @@ WHERE "Orders"."targetType" = 1;
 
 CREATE VIEW IF NOT EXISTS "GroupOrders" AS
 SELECT
+    "Orders"."id" AS "id",
     "Orders"."task" AS "task",
     "AgentsGroup"."name" AS "group",
     "AgentsGroup"."description" AS "groupDescription",
     "Orders"."description" AS "taskDescription",
     "Orders"."data" AS "data",
     "Orders"."start" AS "start",
-    "Orders"."userExecution" AS "user"
+    "Orders"."userExecution" AS "user",
+    "Orders"."add_to_new_agent" AS "add_to_new_agent"
 FROM "Orders"
 INNER JOIN "OrderToGroup" ON "Orders"."id" = "OrderToGroup"."instance"
 INNER JOIN "AgentsGroup" ON "OrderToGroup"."group" = "AgentsGroup"."id"
@@ -269,7 +298,7 @@ INNER JOIN "User" ON "OrderInstance"."user" = "User"."id"
 INNER JOIN "OrderTemplate" ON "OrderInstance"."template" = "OrderTemplate"."id";
 
 INSERT INTO "OS" ("name") VALUES ("Windows"), ("Linux"), ("Darwin");
-INSERT INTO "AgentsGroup" ("name", "description") VALUES ("Windows", "All Windows Agents"), ("Linux", "All Linux Agents"), ("Darwin", "All Darwin (Mac) Agents");
+INSERT INTO "AgentsGroup" ("name", "description") VALUES ("Windows", "All Windows agents"), ("Linux", "All Linux agents"), ("Darwin", "All Darwin (Mac) agents");
 INSERT INTO "OrderType" ("name") VALUES ("COMMAND"), ("UPLOAD"), ("DOWNLOAD"), ("MEMORYSCRIPT"), ("TEMPSCRIPT");
 
 SELECT * FROM OS;

@@ -39,6 +39,7 @@ OrderInstance = namedtuple(
         "user",
         "orderTargetType",
         "template",
+        "add_to_new_agent",
     ],
 )
 
@@ -55,7 +56,7 @@ def insert_order_instance(
     )
     cursor = connection.cursor()
     cursor.execute(
-        'INSERT INTO "OrderInstance" ("startDate", "user", "orderTargetType", "template") VALUES (?, (SELECT "id" FROM "User" WHERE "name" = ?), (SELECT CASE WHEN "Agent" = ? THEN 1 WHEN "Group" = ? THEN 0 END AS "TargetType"), (SELECT "id" FROM "OrderTemplate" WHERE "name" = ? AND "executePermission" <= ?));',
+        'INSERT INTO "OrderInstance" ("startDate", "user", "orderTargetType", "template", "add_to_new_agent") VALUES (?, (SELECT "id" FROM "User" WHERE "name" = ?), (SELECT CASE WHEN "Agent" = ? THEN 1 WHEN "Group" = ? THEN 0 END AS "TargetType"), (SELECT "id" FROM "OrderTemplate" WHERE "name" = ? AND "executePermission" <= ?), ?);',
         (
             order_instance.startDate,
             order_instance.user,
@@ -63,26 +64,39 @@ def insert_order_instance(
             order_instance.orderTargetType,
             order_instance.template,
             max_user_permission,
+            order_instance.add_to_new_agent,
         ),
     )
-    if order_instance.orderTargetType == "GROUP":
-        table_insert = "OrderToGroup"
-        table_select = "AgentsGroup"
-        column = "group"
+
+    cursor.execute("SELECT last_insert_rowid();")
+    instance_id = cursor.fetchone()[0]
+
+    if order_instance.orderTargetType == "Group":
+        cursor.execute(
+            'INSERT INTO "OrderToGroup" ("group","instance") VALUES ((SELECT "id" FROM "AgentsGroup" WHERE "name" = ?), ?);',
+            (target_name, instance_id),
+        )
+        cursor.execute(
+            'SELECT "name" FROM "Groups" WHERE "Groups"."group" = ?;',
+            (target_name,)
+        )
+        targets = cursor.fetchall()
     else:
-        table_insert = "OrderToAgent"
-        table_select = "Agent"
-        column = "agent"
-    cursor.execute(
-        'INSERT INTO "'
-        + table_insert
-        + '" ("'
-        + column
-        + '","instance") VALUES ((SELECT "id" FROM "'
-        + table_select
-        + '" WHERE "name" = ?),last_insert_rowid());',
-        (target_name,),
-    )
+        cursor.execute(
+            'INSERT INTO "OrderToAgent" ("agent","instance") VALUES ((SELECT "id" FROM "Agent" WHERE "name" = ?), ?);',
+            (target_name, instance_id),
+        )
+        targets = ((target_name,),)
+
+    for target in targets:
+        cursor.execute(
+            'INSERT INTO "OrderResult" ("agent", "instance") VALUES (?, (SELECT "id" FROM "Agent" WHERE "name" = ?), ?);',
+            (
+                target[0],
+                instance_id
+            )
+        )
+    connection.commit()
     cursor.close()
     connection.close()
 
@@ -100,7 +114,7 @@ def get_targets_templates(
     )
     cursor = connection.cursor()
     cursor.execute(
-        "SELECT name FROM OrderTemplate WHERE executePermission=?;",
+        "SELECT name FROM OrderTemplate WHERE executePermission <= ?;",
         (max_privilege_level,),
     )
     order_template_names = {x[0] for x in cursor.fetchall()}
@@ -119,7 +133,7 @@ def parse_args(max_privilege_level: int) -> Namespace:
     This function parses the variables passed as arguments
     """
 
-    order_template_names, target_names = get_targets_templates(
+    target_names, order_template_names = get_targets_templates(
         max_privilege_level
     )
 
@@ -130,26 +144,32 @@ def parse_args(max_privilege_level: int) -> Namespace:
     )
     add_argument = parser.add_argument
     add_argument(
-        "target-name",
+        "target_name",
         choices=target_names,
         help="The target name for the new task.",
     )
     add_argument(
-        "order-template-name",
+        "order_template_name",
         choices=order_template_names,
         type=str,
         help="The order template name to performs on targets.",
     )
     add_argument(
-        "target-type",
+        "target_type",
         choices={"Group", "Agent"},
         help="Target type (Group or Agent).",
     )
 
     add_argument(
         "--start-datetime",
-        type=lambda x: datetime.strptime(x, "%Y-%m-%d %H:%M:%S"),
-        help=("Time to start the tasks (format: YYYY-mm-dd HH:MM:SS)."),
+        type=lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M"),
+        help="Time to start the tasks (format: YYYY-mm-dd HH:MM:SS).",
+    )
+    add_argument(
+        "--add-to-new-agents",
+        action="active_true",
+        default=False,
+        help="Add task to new agent added in the group after the order instance creation.",
     )
 
     return parser.parse_args()
@@ -179,11 +199,13 @@ def main() -> int:
         loads(environ["USER"])["name"],
         arguments.target_type,
         arguments.order_template_name,
+        arguments.add_to_new_agents,
     )
 
     insert_order_instance(order, arguments.target_name, max_user_permission)
+    print("Done.")
     return 0
 
 
-if "__name__" == "__main__":
+if __name__ == "__main__":
     exit(main())

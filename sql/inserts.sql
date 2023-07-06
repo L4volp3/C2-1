@@ -26,7 +26,7 @@ VALUES (?, ?, ?, (SELECT "id" FROM "OS" WHERE "name" = ?))
 ON CONFLICT ("name") DO NOTHING;
 
 -- Insert Group
-INSERT INTO "AgentsGroup" ("name", "description") VALUES (?, ?);
+INSERT INTO "AgentsGroup" ("name", "description") VALUES (?, ?) ON CONFLICT DO NOTHING;
 
 -- Insert Agent into Group
 INSERT INTO "UnionGroupAgent" ("agent", "group", "user")
@@ -46,6 +46,8 @@ INSERT INTO "OrderTemplate" (
     "after",
     "name",
     "description"
+    "filename",
+    "timeout"
 ) VALUES (
     (SELECT "id" FROM "OrderType" WHERE "name" = ?),
     (SELECT "id" FROM "User" WHERE "name" = ?),
@@ -54,21 +56,24 @@ INSERT INTO "OrderTemplate" (
     ?,
     (SELECT "id" FROM "OrderTemplate" WHERE "name" = ?),
     ?,
+    ?,
+    ?,
     ?
 );
 
 -- Insert OrderInstance
--- TODO: Insert check for account permission
 INSERT INTO "OrderInstance" (
     "startDate",
     "user",
     "orderTargetType",
-    "template"
+    "template",
+    "add_to_new_agent"
 ) VALUES (
     ?,
     (SELECT "id" FROM "User" WHERE "name" = ?),
     (SELECT CASE WHEN "Agent" = "Agent" THEN 1 WHEN "Group" = "Group" THEN 0 END AS "TargetType"),
-    (SELECT "id" FROM "OrderTemplate" WHERE "name" = ? AND "executePermission" <= ?)
+    (SELECT "id" FROM "OrderTemplate" WHERE "name" = ? AND "executePermission" <= ?),
+    ?
 );
 
 -- Insert OrderToGroup
@@ -106,25 +111,31 @@ INSERT INTO "OrderResult" (
 
 -- Insert OrderResult base
 INSERT INTO "OrderResult" (
-    "requestDate",
     "agent",
     "instance"
 ) VALUES (
-    ?, ?, ?
+    (SELECT "id" FROM "Agent" WHERE "name" = ?), ?
 );
 
 -- Insert OrderResult data
 UPDATE "OrderResult" SET (
-    "data",
-    "error",
-    "exitcode",
-    "responseDate",
-    "startDate",
-    "endDate"
-) FROM (
-    ?, ?, ?, ?, ?, ?
+    "requestDate" = ?
 ) WHERE (
     "instance" = ? AND
-    "agent" = ? AND
+    "agent" = (SELECT "id" FROM "Agent" WHERE "name" = ? AND "key" = ?) AND
+    "requestDate" IS NULL
+);
+
+-- Insert OrderResult data
+UPDATE "OrderResult" SET (
+    "data" = ?,
+    "error" = ?,
+    "exitcode" = ?,
+    "responseDate" = ?,
+    "startDate" = ?,
+    "endDate" = ?
+) WHERE (
+    "instance" = ? AND
+    "agent" = (SELECT "id" FROM "Agent" WHERE "name" = ? AND "key" = ?) AND
     "responseDate" IS NULL
 );
