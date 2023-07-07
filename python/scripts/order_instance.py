@@ -90,7 +90,7 @@ def insert_order_instance(
 
     for target in targets:
         cursor.execute(
-            'INSERT INTO "OrderResult" ("agent", "instance") VALUES (?, (SELECT "id" FROM "Agent" WHERE "name" = ?), ?);',
+            'INSERT INTO "OrderResult" ("agent", "instance") VALUES ((SELECT "id" FROM "Agent" WHERE "name" = ?), ?);',
             (target[0], instance_id),
         )
     connection.commit()
