@@ -1,11 +1,11 @@
 {
     "server": {
         "scripts_path": [
-            "./scripts/c2",
+            "./scripts/c2"
         ],
 
         "modules_path": ["./modules/"],
-        "modules": ["c2"],
+        "modules": ["c2"]
     },
 
     "scripts": {
