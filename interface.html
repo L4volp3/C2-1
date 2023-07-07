@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Order Management System</title>
+  <style>
+    /* Styles for the interface */
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+  
+    h1 {
+      text-align: center;
+    }
+  
+    h2 {
+      margin-top: 30px;
+    }
+  
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+  
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+  
+    .result {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Order Management System</h1>
+  
+    <h2>Groups</h2>
+    <table id="groupsTable">
+      <thead>
+        <tr>
+          <th>Group ID</th>
+          <th>Name</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Group rows will be dynamically added here -->
+      </tbody>
+    </table>
+  
+    <h2>Agents</h2>
+    <table id="agentsTable">
+      <thead>
+        <tr>
+          <th>Agent ID</th>
+          <th>Name</th>
+          <th>Operating System</th>
+          <!-- Add more agent specific features as needed -->
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Agent rows will be dynamically added here -->
+      </tbody>
+    </table>
+  
+    <h2>Orders Given</h2>
+    <table id="ordersTable">
+      <thead>
+        <tr>
+          <th>Order Type</th>
+          <th>Order Target</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Order rows will be dynamically added here -->
+      </tbody>
+    </table>
+  
+    <h2>Order Results</h2>
+    <table id="resultsTable">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Result rows will be dynamically added here -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // JavaScript code to fetch data from the server and populate the tables dynamically
+    
+    // Fetch groups data from the server
+    fetch('groupsData.json')
+      .then(response => response.json())
+      .then(groupsData => {
+        const groupsTableBody = document.querySelector('#groupsTable tbody');
+        groupsData.forEach(group => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${group._id}</td>
+            <td>${group.name}</td>
+          `;
+          groupsTableBody.appendChild(row);
+        });
+      });
+
+    // Fetch agents data from the server
+    //Cela envoie une requête HTTP pour récupérer le contenu du fichier JSON agentsData.json. La méthode fetch renvoie une promesse qui est résolue lorsque la réponse est reçue.
+    fetch('agentsData.json')
+    //Ce code attend la réponse de la requête et la traite en utilisant une autre promesse. La méthode json() est appelée sur la réponse pour extraire les données JSON de la réponse.
+      .then(response => response.json())
+      //Une fois que les données JSON sont extraites, cette fonction est exécutée avec les données en tant que paramètre. Les données sont assignées à la variable agentsData.
+      .then(agentsData => {
+        //Cela sélectionne l'élément <tbody> de la table ayant l'identifiant agentsTable dans le document HTML.
+        const agentsTableBody = document.querySelector('#agentsTable tbody');
+        // Ceci itère sur chaque élément de agentsData à l'aide de la méthode forEach. Pour chaque élément, une fonction est exécutée.
+        agentsData.forEach(agent => {
+            //Cela crée un nouvel élément <tr> (ligne) dans le document HTML.
+          const row = document.createElement('tr');
+          //ela définit le contenu HTML de la ligne en utilisant une chaîne de caractères contenant du code HTML avec des valeurs des propriétés de chaque agent. Les propriétés utilisées ici sont _id, name et os.
+          row.innerHTML = `
+            <td>${agent._id}</td>
+            <td>${agent.name}</td>
+            <td>${agent.os}</td>
+          `;
+          //Cela ajoute la ligne nouvellement créée à la fin du tableau dans le document HTML.
+          agentsTableBody.appendChild(row);
+        });
+      });
+
+   
