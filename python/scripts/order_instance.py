@@ -164,7 +164,7 @@ def parse_args(max_privilege_level: int) -> Namespace:
     )
     add_argument(
         "--add-to-new-agents",
-        action="active_true",
+        action="store_true",
         default=False,
         help="Add task to new agent added in the group after the order instance creation.",
     )
