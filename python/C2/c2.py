@@ -202,7 +202,7 @@ def get_tasks_by_agent(
 
     for order in orders:
         cursor.execute(
-            'UPDATE "OrderResult" SET ("requestDate" = ?) WHERE ("instance" = ? AND "agent" = (SELECT "id" FROM "Agent" WHERE "name" = ? AND "key" = ?) AND "requestDate" IS NULL);',
+            'UPDATE "OrderResult" SET "requestDate" = ? WHERE ("instance" = ? AND "agent" = (SELECT "id" FROM "Agent" WHERE "name" = ? AND "key" = ?) AND "requestDate" IS NULL);',
             (datetime.now(), order[8], hostname, key),
         )
 

@@ -118,23 +118,23 @@ INSERT INTO "OrderResult" (
 );
 
 -- Insert OrderResult data
-UPDATE "OrderResult" SET (
+UPDATE "OrderResult" SET
     "requestDate" = ?
-) WHERE (
+WHERE (
     "instance" = ? AND
     "agent" = (SELECT "id" FROM "Agent" WHERE "name" = ? AND "key" = ?) AND
     "requestDate" IS NULL
 );
 
 -- Insert OrderResult data
-UPDATE "OrderResult" SET (
+UPDATE "OrderResult" SET
     "data" = ?,
     "error" = ?,
     "exitcode" = ?,
     "responseDate" = ?,
     "startDate" = ?,
     "endDate" = ?
-) WHERE (
+WHERE (
     "instance" = ? AND
     "agent" = (SELECT "id" FROM "Agent" WHERE "name" = ? AND "key" = ?) AND
     "responseDate" IS NULL
