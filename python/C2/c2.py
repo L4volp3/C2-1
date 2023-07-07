@@ -248,7 +248,7 @@ def get_orders(
         return None
 
     api_webscript = {
-        "NextRequestTime": int(time() + 30) + 1,
+        "NextRequestTime": int(time() + next_request_time) + 1,
         "Tasks": [
             {
                 "Type": task.type,
